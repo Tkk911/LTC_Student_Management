@@ -1,13 +1,29 @@
+// ==================== LTC Student Management System - Frontend (Full Optimized Version) ====================
+// วิทยาลัยเทคโนโลยีแหมทอง (Laemthong Technology College)
+// ระบบจัดการรายชื่อนักศึกษา - ฉบับสมบูรณ์ พร้อมระบบจัดการข้อมูลขนาดใหญ่
+// Version: 3.0
+// Last Updated: 2026-05-29
+
 // ==================== การตั้งค่า ====================
 // 🔴 IMPORTANT: เปลี่ยน URL เป็น URL ที่ได้จากการ Deploy GAS
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz7Ao1YKCDHwjJgRQD0iSAuJ_07rFM2ezpiZk8ISkRxYnpsx7r8oJHKiJs1dGt33SDA/exec';
+// ต้องลงท้ายด้วย /exec เสมอ
+let GAS_URL = 'https://script.google.com/macros/s/AKfycbyu7RKvIUzxgSeR8M8MCzXVAdU_QFGZLUKDdgiBoOUkCguH_T1X6QYDaNWW68MsIqyK/exec';
 
-// เปลี่ยนเป็น false เพื่อใช้ Google Sheets
+// เปลี่ยนเป็น false เพื่อใช้ Google Sheets (ต้องตั้งค่า GAS_URL ให้ถูกต้อง)
 const USE_LOCAL_STORAGE = false;
 
 let students = [];
 let currentUser = { role: 'guest', name: 'ผู้เยี่ยมชม' };
 const SIGNATURE_COLUMNS = 25;
+
+// ==================== Pagination Variables ====================
+let currentPage = 1;
+let pageSize = 50;
+let totalPages = 0;
+let totalStudents = 0;
+let isLoading = false;
+let searchTimeout = null;
+let currentFilters = {};
 
 // ==================== ฟังก์ชันทดสอบการเชื่อมต่อ ====================
 
@@ -16,8 +32,13 @@ async function testGASConnection() {
         console.log('🔍 กำลังทดสอบการเชื่อมต่อ GAS...');
         console.log('URL:', GAS_URL);
         
-        const response = await fetch(`${GAS_URL}?action=test`, {
-            method: 'GET',
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action: 'test' }),
+            mode: 'cors',
             cache: 'no-cache'
         });
         
@@ -33,6 +54,25 @@ async function testGASConnection() {
         console.error('❌ เชื่อมต่อ GAS ล้มเหลว:', error);
         return { success: false, error: error.message };
     }
+}
+
+// ฟังก์ชันสำหรับรับ URL จาก localStorage (ถ้ามี)
+function getGASUrl() {
+    const savedUrl = localStorage.getItem('ltc_gas_url');
+    if (savedUrl && savedUrl.includes('script.google.com')) {
+        return savedUrl;
+    }
+    return GAS_URL;
+}
+
+// ฟังก์ชันบันทึก URL
+function saveGASUrl(url) {
+    if (url && url.includes('script.google.com')) {
+        localStorage.setItem('ltc_gas_url', url);
+        GAS_URL = url;
+        return true;
+    }
+    return false;
 }
 
 // ==================== ระบบสิทธิ์ผู้ใช้ ====================
@@ -78,38 +118,56 @@ function logout() {
 
 // ==================== โหลดข้อมูลจาก Google Sheets ====================
 
-async function loadStudents() {
+async function loadStudents(resetPage = true) {
+    if (isLoading) return;
+    
     try {
+        isLoading = true;
         showLoading(true);
         
+        if (resetPage) {
+            currentPage = 1;
+        }
+        
         if (USE_LOCAL_STORAGE) {
-            // ใช้ Local Storage
             const saved = localStorage.getItem('ltc_students');
             if (saved) {
                 students = JSON.parse(saved);
+                totalStudents = students.length;
+                totalPages = Math.ceil(totalStudents / pageSize);
+                renderTable();
+                updateStats();
+                updatePaginationControls();
             } else {
                 loadSampleData();
             }
-            renderTable();
-            updateStats();
         } else {
-            // ใช้ Google Sheets
-            console.log('📡 กำลังโหลดข้อมูลจาก Google Sheets...');
+            console.log(`📡 กำลังโหลดข้อมูลหน้า ${currentPage}...`);
             
-            // ทดสอบการเชื่อมต่อก่อน
-            const testResult = await testGASConnection();
-            if (!testResult.success) {
-                throw new Error(`ไม่สามารถเชื่อมต่อ GAS: ${testResult.error}`);
-            }
+            currentFilters = {
+                level: document.getElementById('filterLevel')?.value || '',
+                major: document.getElementById('filterMajor')?.value || '',
+                serial: document.getElementById('filterSerial')?.value || '',
+                search: document.getElementById('searchInput')?.value || ''
+            };
             
-            // โหลดข้อมูล
-            const response = await fetch(`${GAS_URL}?action=getStudents`, {
-                method: 'GET',
-                cache: 'no-cache'
+            const url = getGASUrl();
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    action: 'getStudentsPaginated',
+                    page: currentPage,
+                    pageSize: pageSize,
+                    filters: currentFilters
+                }),
+                mode: 'cors'
             });
             
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}`);
             }
             
             const result = await response.json();
@@ -117,55 +175,149 @@ async function loadStudents() {
             
             if (result.success) {
                 students = result.data || [];
+                totalPages = result.totalPages;
+                totalStudents = result.total;
+                
                 renderTable();
                 updateStats();
-                console.log(`✅ โหลดข้อมูลสำเร็จ: ${students.length} รายการ`);
+                updatePaginationControls();
+                
+                console.log(`✅ โหลดข้อมูลสำเร็จ: ${students.length}/${totalStudents} รายการ (หน้า ${currentPage}/${totalPages})`);
             } else {
                 throw new Error(result.message || 'โหลดข้อมูลล้มเหลว');
             }
         }
     } catch (error) {
         console.error('❌ โหลดข้อมูลล้มเหลว:', error);
-        
-        await Swal.fire({
-            title: '⚠️ ไม่สามารถเชื่อมต่อ Google Sheets',
-            html: `เกิดข้อผิดพลาด: <strong>${error.message}</strong><br><br>
-                   <hr>
-                   <div style="text-align:left; font-size:13px;">
-                   <strong>🔧 วิธีแก้ไข:</strong><br>
-                   1. ตรวจสอบว่า Deploy GAS แล้ว<br>
-                   2. ตั้งค่า Access เป็น "Anyone"<br>
-                   3. คัดลอก URL มาใส่ใน GAS_URL<br>
-                   4. ทดสอบ URL: <br>
-                   <code>${GAS_URL}?action=test</code>
-                   </div>
-                   <hr>
-                   <br>ระบบจะใช้ <strong>ข้อมูลตัวอย่าง</strong> แทน`,
-            icon: 'warning',
-            confirmButtonText: 'ตกลง'
-        });
-        
-        // ใช้ข้อมูลตัวอย่างสำรอง
-        loadSampleData();
+        showErrorAndFallback(error);
     } finally {
+        isLoading = false;
         showLoading(false);
     }
 }
 
-function loadSampleData() {
-    students = [
-        { id: '1', code: '69301040060', prefix: 'นาย', firstname: 'ธนพล', lastname: 'ลัดดาแย้ม', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0812345678', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
-        { id: '2', code: '69301040061', prefix: 'นาย', firstname: 'รณกร', lastname: 'วิพัฒนกำจร', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0823456789', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
-        { id: '3', code: '69301040083', prefix: 'นาย', firstname: 'กิตติธัช', lastname: 'มาเสริฐ', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0834567890', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
-        { id: '4', code: '69301040095', prefix: 'นาย', firstname: 'วัชระพงษ์', lastname: 'สมสะกิจ', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0845678901', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
-        { id: '5', code: '69301040096', prefix: 'นาย', firstname: 'ภูรี', lastname: 'ราชอาด', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0856789012', status: 'กำลังศึกษา', created_at: new Date().toISOString() }
-    ];
+function showErrorAndFallback(error) {
+    Swal.fire({
+        title: '⚠️ ไม่สามารถเชื่อมต่อ Google Sheets',
+        html: `
+            <div style="text-align:left;">
+                <p>เกิดข้อผิดพลาด: <strong>${error.message}</strong></p>
+                <hr>
+                <p><strong>🔧 วิธีแก้ไข:</strong></p>
+                <ol style="text-align:left; margin-left:20px;">
+                    <li>เปิดไฟล์ <strong>Google Sheets</strong> ที่ต้องการใช้</li>
+                    <li>ไปที่ <strong>Extensions → Apps Script</strong></li>
+                    <li>วางโค้ด <strong>GAS.txt</strong> ลงใน editor</li>
+                    <li>คลิก <strong>Deploy → New deployment</strong></li>
+                    <li>เลือก <strong>Web app</strong> ตั้งค่า Execute as: "Me", Access: "Anyone"</li>
+                    <li>คัดลอก URL (ลงท้ายด้วย /exec) มาใส่ด้านล่าง</li>
+                </ol>
+                <hr>
+                <div class="input-group" style="margin-top:10px;">
+                    <label>📎 วาง URL ที่ได้จากการ Deploy:</label>
+                    <input type="text" id="gasUrlInput" style="width:100%; padding:8px; margin-top:5px; border:1px solid #ddd; border-radius:5px;" 
+                           placeholder="https://script.google.com/macros/s/.../exec" value="${getGASUrl()}">
+                    <button id="saveUrlBtn" style="margin-top:10px; padding:8px 15px; background:#4caf50; color:white; border:none; border-radius:5px; cursor:pointer;">💾 บันทึกและทดสอบ</button>
+                </div>
+            </div>
+        `,
+        icon: 'warning',
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: 'ใช้ข้อมูลตัวอย่าง',
+        didOpen: () => {
+            const saveBtn = document.getElementById('saveUrlBtn');
+            if (saveBtn) {
+                saveBtn.onclick = async () => {
+                    const newUrl = document.getElementById('gasUrlInput').value.trim();
+                    if (newUrl) {
+                        if (saveGASUrl(newUrl)) {
+                            const testResult = await testGASConnection();
+                            if (testResult.success) {
+                                Swal.fire('สำเร็จ', 'เชื่อมต่อ GAS สำเร็จ!', 'success').then(() => {
+                                    window.location.reload();
+                                });
+                            } else {
+                                Swal.fire('ผิดพลาด', 'ไม่สามารถเชื่อมต่อ URL ที่ระบุได้', 'error');
+                            }
+                        } else {
+                            Swal.fire('ผิดพลาด', 'URL ไม่ถูกต้อง', 'error');
+                        }
+                    } else {
+                        Swal.fire('กรุณาใส่ URL', '', 'warning');
+                    }
+                };
+            }
+        }
+    }).then((result) => {
+        if (result.dismiss === Swal.DismissReason.cancel) {
+            loadSampleData();
+        }
+    });
+}
+
+// ==================== Pagination Controls ====================
+
+function updatePaginationControls() {
+    let paginationContainer = document.getElementById('paginationContainer');
     
-    if (USE_LOCAL_STORAGE) {
-        localStorage.setItem('ltc_students', JSON.stringify(students));
+    if (!paginationContainer && totalPages > 1) {
+        const tableContainer = document.querySelector('.table-container');
+        if (tableContainer) {
+            paginationContainer = document.createElement('div');
+            paginationContainer.id = 'paginationContainer';
+            paginationContainer.className = 'pagination-container';
+            tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+        }
     }
-    renderTable();
-    updateStats();
+    
+    if (!paginationContainer) return;
+    
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    }
+    
+    paginationContainer.style.display = 'flex';
+    paginationContainer.innerHTML = `
+        <div class="pagination-info">
+            แสดง ${(currentPage - 1) * pageSize + 1} - ${Math.min(currentPage * pageSize, totalStudents)} จาก ${totalStudents} รายการ
+        </div>
+        <div class="pagination-controls">
+            <button class="btn-pagination" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>⏮️ แรก</button>
+            <button class="btn-pagination" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>◀ ก่อนหน้า</button>
+            <span class="page-info">หน้า ${currentPage} / ${totalPages}</span>
+            <button class="btn-pagination" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป ▶</button>
+            <button class="btn-pagination" onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>สุดท้าย ⏭️</button>
+        </div>
+        <div class="page-size-selector">
+            <label>แสดง:</label>
+            <select id="pageSizeSelect" onchange="changePageSize()">
+                <option value="20" ${pageSize === 20 ? 'selected' : ''}>20</option>
+                <option value="50" ${pageSize === 50 ? 'selected' : ''}>50</option>
+                <option value="100" ${pageSize === 100 ? 'selected' : ''}>100</option>
+                <option value="200" ${pageSize === 200 ? 'selected' : ''}>200</option>
+            </select>
+            <span>รายการ</span>
+        </div>
+    `;
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages || page === currentPage) return;
+    currentPage = page;
+    loadStudents(false);
+}
+
+function changePageSize() {
+    const select = document.getElementById('pageSizeSelect');
+    if (select) {
+        const newSize = parseInt(select.value);
+        if (newSize === pageSize) return;
+        pageSize = newSize;
+        currentPage = 1;
+        loadStudents(true);
+    }
 }
 
 // ==================== บันทึกข้อมูลไป Google Sheets ====================
@@ -194,19 +346,22 @@ async function saveStudent(studentData) {
                 });
             }
             localStorage.setItem('ltc_students', JSON.stringify(students));
-            await loadStudents();
+            await loadStudents(true);
             Swal.fire('สำเร็จ', 'บันทึกข้อมูลเรียบร้อย', 'success');
             closeModal();
         } else {
-            // บันทึกไป Google Sheets
             const action = studentData.id ? 'updateStudent' : 'addStudent';
+            const url = getGASUrl();
             
-            const response = await fetch(GAS_URL, {
+            console.log(`📤 กำลังส่งข้อมูล: ${action}`);
+            
+            const response = await fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ action, ...studentData })
+                body: JSON.stringify({ action, ...studentData }),
+                mode: 'cors'
             });
             
             if (!response.ok) {
@@ -214,11 +369,12 @@ async function saveStudent(studentData) {
             }
             
             const result = await response.json();
+            console.log('📥 ผลลัพธ์:', result);
             
             if (result.success) {
                 Swal.fire('สำเร็จ', result.message || 'บันทึกข้อมูลเรียบร้อย', 'success');
                 closeModal();
-                await loadStudents();
+                await loadStudents(true);
             } else {
                 throw new Error(result.message || 'บันทึกข้อมูลล้มเหลว');
             }
@@ -231,62 +387,267 @@ async function saveStudent(studentData) {
     }
 }
 
-// ==================== ลบข้อมูลจาก Google Sheets ====================
+// ==================== ลบข้อมูล ====================
 
-async function deleteStudent(id) {
+async function deleteStudent(id, showAlert = true) {
     if (currentUser.role !== 'admin') {
-        Swal.fire('ไม่ได้รับอนุญาต', 'เฉพาะแอดมินเท่านั้นที่สามารถลบข้อมูลได้', 'warning');
-        return;
+        if (showAlert) Swal.fire('ไม่ได้รับอนุญาต', 'เฉพาะแอดมินเท่านั้นที่สามารถลบข้อมูลได้', 'warning');
+        return false;
     }
     
-    const result = await Swal.fire({
-        title: 'ยืนยันการลบ',
-        text: 'คุณต้องการลบข้อมูลนี้ใช่หรือไม่?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#f44336',
-        confirmButtonText: 'ลบ',
-        cancelButtonText: 'ยกเลิก'
-    });
+    if (showAlert) {
+        const result = await Swal.fire({
+            title: 'ยืนยันการลบ',
+            text: 'คุณต้องการลบข้อมูลนี้ใช่หรือไม่?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f44336',
+            confirmButtonText: 'ลบ',
+            cancelButtonText: 'ยกเลิก'
+        });
+        if (!result.isConfirmed) return false;
+    }
     
-    if (!result.isConfirmed) return;
+    try {
+        showLoading(true);
+        
+        const url = getGASUrl();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'deleteStudent', id: id }),
+            mode: 'cors'
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (showAlert) Swal.fire('ลบสำเร็จ', data.message || 'ข้อมูลถูกลบเรียบร้อย', 'success');
+            await loadStudents(true);
+            return true;
+        } else {
+            throw new Error(data.message || 'ลบข้อมูลล้มเหลว');
+        }
+    } catch (error) {
+        console.error('ลบข้อมูลล้มเหลว:', error);
+        if (showAlert) Swal.fire('ผิดพลาด', 'ไม่สามารถลบข้อมูลได้: ' + error.message, 'error');
+        return false;
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ==================== Batch Operations ====================
+
+async function batchImportStudents(newStudents) {
+    if (currentUser.role !== 'admin') {
+        Swal.fire('ไม่ได้รับอนุญาต', 'เฉพาะแอดมินเท่านั้นที่สามารถนำเข้าข้อมูลได้', 'warning');
+        return false;
+    }
     
     try {
         showLoading(true);
         
         if (USE_LOCAL_STORAGE) {
-            students = students.filter(s => s.id !== id);
+            students.push(...newStudents);
             localStorage.setItem('ltc_students', JSON.stringify(students));
-            await loadStudents();
-            Swal.fire('ลบสำเร็จ', 'ข้อมูลถูกลบเรียบร้อย', 'success');
+            await loadStudents(true);
+            return true;
         } else {
-            // ลบจาก Google Sheets
-            const response = await fetch(GAS_URL, {
+            const url = getGASUrl();
+            const response = await fetch(url, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ action: 'deleteStudent', id: id })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'batchImport', students: newStudents }),
+                mode: 'cors'
             });
             
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                Swal.fire('ลบสำเร็จ', data.message || 'ข้อมูลถูกลบเรียบร้อย', 'success');
-                await loadStudents();
+            const result = await response.json();
+            if (result.success) {
+                await loadStudents(true);
+                return true;
             } else {
-                throw new Error(data.message || 'ลบข้อมูลล้มเหลว');
+                throw new Error(result.message);
             }
         }
     } catch (error) {
-        console.error('ลบข้อมูลล้มเหลว:', error);
-        Swal.fire('ผิดพลาด', 'ไม่สามารถลบข้อมูลได้: ' + error.message, 'error');
+        console.error('นำเข้าข้อมูลล้มเหลว:', error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถนำเข้าข้อมูลได้: ' + error.message, 'error');
+        return false;
     } finally {
         showLoading(false);
+    }
+}
+
+async function batchUpdateStudents(updates) {
+    if (currentUser.role !== 'admin') {
+        Swal.fire('ไม่ได้รับอนุญาต', 'เฉพาะแอดมินเท่านั้น', 'warning');
+        return false;
+    }
+    
+    try {
+        showLoading(true);
+        
+        const url = getGASUrl();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: 'batchUpdate',
+                updates: updates
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            Swal.fire('สำเร็จ', result.message, 'success');
+            await loadStudents(true);
+            return true;
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Batch update error:', error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถอัปเดตข้อมูลได้: ' + error.message, 'error');
+        return false;
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function batchUpdateStatus(studentIds, newStatus) {
+    const updates = studentIds.map(id => ({
+        id: id,
+        status: newStatus
+    }));
+    
+    const confirm = await Swal.fire({
+        title: 'ยืนยันการเปลี่ยนสถานะ',
+        text: `คุณต้องการเปลี่ยนสถานะ ${studentIds.length} รายการ เป็น "${newStatus}" ใช่หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+    });
+    
+    if (confirm.isConfirmed) {
+        return batchUpdateStudents(updates);
+    }
+    return false;
+}
+
+function getSelectedStudentIds() {
+    const checkboxes = document.querySelectorAll('.studentCheckbox:checked');
+    return Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+}
+
+function showBulkActions() {
+    const selectedIds = getSelectedStudentIds();
+    if (selectedIds.length === 0) {
+        Swal.fire('แจ้งเตือน', 'กรุณาเลือกนักศึกษาอย่างน้อย 1 คน', 'warning');
+        return;
+    }
+    
+    Swal.fire({
+        title: 'จัดการข้อมูลกลุ่ม',
+        html: `
+            <div style="text-align:left;">
+                <p>เลือก ${selectedIds.length} รายการ</p>
+                <select id="bulkActionSelect" class="swal2-select" style="width:100%; padding:8px; margin:10px 0;">
+                    <option value="">-- เลือกการกระทำ --</option>
+                    <option value="status_active">เปลี่ยนสถานะเป็น "กำลังศึกษา"</option>
+                    <option value="status_graduated">เปลี่ยนสถานะเป็น "จบการศึกษา"</option>
+                    <option value="status_suspended">เปลี่ยนสถานะเป็น "พักการเรียน"</option>
+                    <option value="status_dropped">เปลี่ยนสถานะเป็น "ลาออก"</option>
+                    <option value="delete">ลบข้อมูล (${selectedIds.length} รายการ)</option>
+                </select>
+            </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'ดำเนินการ',
+        cancelButtonText: 'ยกเลิก',
+        preConfirm: () => {
+            const action = document.getElementById('bulkActionSelect').value;
+            if (!action) {
+                Swal.showValidationMessage('กรุณาเลือกการกระทำ');
+                return false;
+            }
+            return action;
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            const action = result.value;
+            
+            if (action === 'delete') {
+                const confirm = await Swal.fire({
+                    title: 'ยืนยันการลบกลุ่ม',
+                    text: `คุณต้องการลบ ${selectedIds.length} รายการ ใช่หรือไม่?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#f44336',
+                    confirmButtonText: 'ลบทั้งหมด',
+                    cancelButtonText: 'ยกเลิก'
+                });
+                
+                if (confirm.isConfirmed) {
+                    let successCount = 0;
+                    for (const id of selectedIds) {
+                        const success = await deleteStudent(id, false);
+                        if (success) successCount++;
+                    }
+                    await loadStudents(true);
+                    Swal.fire('สำเร็จ', `ลบข้อมูล ${successCount} จาก ${selectedIds.length} รายการ`, 'success');
+                }
+            } else if (action.startsWith('status_')) {
+                const statusMap = {
+                    'status_active': 'กำลังศึกษา',
+                    'status_graduated': 'จบการศึกษา',
+                    'status_suspended': 'พักการเรียน',
+                    'status_dropped': 'ลาออก'
+                };
+                await batchUpdateStatus(selectedIds, statusMap[action]);
+            }
+        }
+    });
+}
+
+// ==================== ฟังก์ชันค้นหาแบบ Real-time ====================
+
+function setupSearchDebounce() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            if (searchTimeout) clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                if (e.target.value.length >= 2 || e.target.value.length === 0) {
+                    loadStudents(true);
+                }
+            }, 500);
+        });
+    }
+}
+
+async function quickSearch(searchTerm) {
+    if (!searchTerm || searchTerm.length < 2) return [];
+    
+    try {
+        const url = getGASUrl();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                action: 'quickSearch',
+                search: searchTerm,
+                limit: 20
+            })
+        });
+        
+        const result = await response.json();
+        return result.success ? result.data : [];
+    } catch (error) {
+        console.error('Quick search error:', error);
+        return [];
     }
 }
 
@@ -294,30 +655,18 @@ async function deleteStudent(id) {
 
 function renderTable() {
     const tbody = document.getElementById('studentTableBody');
-    const filterLevel = document.getElementById('filterLevel').value;
-    const filterMajor = document.getElementById('filterMajor').value;
-    const filterSerial = document.getElementById('filterSerial').value;
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    if (!tbody) return;
     
-    let filtered = students.filter(student => {
-        if (filterLevel && student.level !== filterLevel) return false;
-        if (filterMajor && student.major !== filterMajor) return false;
-        if (filterSerial && student.serial !== filterSerial) return false;
-        if (searchTerm) {
-            const fullName = `${student.prefix}${student.firstname} ${student.lastname}`;
-            return student.code.includes(searchTerm) || fullName.toLowerCase().includes(searchTerm);
-        }
-        return true;
-    });
+    const isAdmin = currentUser.role === 'admin';
     
-    if (filtered.length === 0) {
+    if (!students || students.length === 0) {
         tbody.innerHTML = '<tr><td colspan="10" class="loading">📭 ไม่พบข้อมูล</td></tr>';
         return;
     }
     
-    const isAdmin = currentUser.role === 'admin';
+    const startIndex = (currentPage - 1) * pageSize;
     
-    tbody.innerHTML = filtered.map((student, index) => {
+    tbody.innerHTML = students.map((student, idx) => {
         let statusClass = '';
         if (student.status === 'กำลังศึกษา') statusClass = 'status-active';
         else if (student.status === 'จบการศึกษา') statusClass = 'status-graduated';
@@ -325,35 +674,59 @@ function renderTable() {
         
         const actionButtons = isAdmin ? `
             <td class="action-buttons">
-                <button class="btn btn-secondary" onclick="editStudent('${student.id}')" style="padding: 4px 8px;">✏️</button>
-                <button class="btn btn-danger" onclick="deleteStudent('${student.id}')" style="padding: 4px 8px;">🗑️</button>
+                <button class="btn btn-secondary" onclick="editStudent('${student.id}')" title="แก้ไข">✏️</button>
+                <button class="btn btn-danger" onclick="deleteStudent('${student.id}')" title="ลบ">🗑️</button>
             </td>
         ` : '<td>-</td>';
         
         return `
             <tr>
-                <td><input type="checkbox" class="studentCheckbox" data-id="${student.id}" ${!isAdmin ? 'disabled' : ''}></td>
-                <td>${index + 1}</td>
-                <td><strong>${student.code}</strong></td>
-                <td>${student.prefix}${student.firstname} ${student.lastname}</td>
-                <td>${student.level}</td>
-                <td>${student.room || '-'}</td>
-                <td>${student.major}</td>
-                <td>${student.serial}</td>
-                <td><span class="status-badge ${statusClass}">${student.status}</span></td>
+                <td style="text-align:center">
+                    <input type="checkbox" class="studentCheckbox" data-id="${student.id}" ${!isAdmin ? 'disabled' : ''}>
+                </td>
+                <td style="text-align:center">${startIndex + idx + 1}</td>
+                <td><strong>${escapeHtml(student.code) || '-'}</strong></td>
+                <td>${escapeHtml(student.prefix || '')}${escapeHtml(student.firstname || '')} ${escapeHtml(student.lastname || '')}</td>
+                <td style="text-align:center">${student.level || '-'}</td>
+                <td style="text-align:center">${student.room || '-'}</td>
+                <td>${student.major || '-'}</td>
+                <td style="text-align:center">${student.serial || '-'}</td>
+                <td style="text-align:center"><span class="status-badge ${statusClass}">${student.status || '-'}</span></td>
                 ${actionButtons}
             </tr>
         `;
     }).join('');
+    
+    // อัปเดต checkbox select all
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        const checkboxes = document.querySelectorAll('.studentCheckbox');
+        selectAll.checked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function updateStats() {
-    const total = students.length;
+    const total = totalStudents || students.length;
     const active = students.filter(s => s.status === 'กำลังศึกษา').length;
     const graduated = students.filter(s => s.status === 'จบการศึกษา').length;
-    document.getElementById('totalCount').textContent = total;
-    document.getElementById('activeCount').textContent = active;
-    document.getElementById('graduatedCount').textContent = graduated;
+    
+    const totalCountEl = document.getElementById('totalCount');
+    const activeCountEl = document.getElementById('activeCount');
+    const graduatedCountEl = document.getElementById('graduatedCount');
+    
+    if (totalCountEl) totalCountEl.textContent = total;
+    if (activeCountEl) activeCountEl.textContent = active;
+    if (graduatedCountEl) graduatedCountEl.textContent = graduated;
 }
 
 function editStudent(id) {
@@ -411,7 +784,6 @@ function importExcel(file) {
                 cancelButtonText: 'ยกเลิก'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    showLoading(true);
                     const newStudents = rows.map((row, index) => ({
                         id: Date.now() + index + '',
                         code: row['รหัสนักศึกษา'] || row['code'] || '',
@@ -427,27 +799,8 @@ function importExcel(file) {
                         created_at: new Date().toISOString()
                     }));
                     
-                    if (USE_LOCAL_STORAGE) {
-                        students.push(...newStudents);
-                        localStorage.setItem('ltc_students', JSON.stringify(students));
-                        await loadStudents();
-                        Swal.fire('สำเร็จ', `นำเข้าข้อมูล ${newStudents.length} รายการ`, 'success');
-                    } else {
-                        // ส่งไป Google Sheets
-                        const response = await fetch(GAS_URL, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ action: 'batchImport', students: newStudents })
-                        });
-                        const resData = await response.json();
-                        if (resData.success) {
-                            Swal.fire('สำเร็จ', resData.message, 'success');
-                            await loadStudents();
-                        } else {
-                            throw new Error(resData.message);
-                        }
-                    }
-                    showLoading(false);
+                    await batchImportStudents(newStudents);
+                    Swal.fire('สำเร็จ', `นำเข้าข้อมูล ${newStudents.length} รายการ`, 'success');
                 }
             });
         } catch (error) {
@@ -479,6 +832,82 @@ function exportToExcel() {
     XLSX.writeFile(wb, `รายชื่อนักศึกษา_LTC_${new Date().toLocaleDateString('th-TH')}.xlsx`);
     
     Swal.fire('สำเร็จ', 'ส่งออกไฟล์ Excel เรียบร้อย', 'success');
+}
+
+async function exportLargeData() {
+    Swal.fire({
+        title: 'กำลังส่งออกข้อมูล',
+        text: 'กรุณารอสักครู่...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    try {
+        const url = getGASUrl();
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'exportLargeData' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            const exportData = result.data.map((s, idx) => ({
+                'ลำดับ': idx + 1,
+                'รหัสนักศึกษา': s.code,
+                'คำนำหน้า': s.prefix,
+                'ชื่อ': s.firstname,
+                'นามสกุล': s.lastname,
+                'ระดับชั้น': s.level,
+                'ห้อง': s.room,
+                'สาขาวิชา': s.major,
+                'รอบเรียน': s.serial,
+                'เบอร์โทร': s.phone,
+                'สถานะ': s.status
+            }));
+            
+            if (exportData.length > 5000) {
+                const chunks = [];
+                for (let i = 0; i < exportData.length; i += 5000) {
+                    chunks.push(exportData.slice(i, i + 5000));
+                }
+                
+                Swal.fire({
+                    title: `ส่งออกข้อมูล ${exportData.length} รายการ`,
+                    html: `ข้อมูลมีจำนวนมาก จะแบ่งเป็น ${chunks.length} ไฟล์<br>ต้องการดำเนินการต่อหรือไม่?`,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'ดำเนินการ'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        chunks.forEach((chunk, index) => {
+                            const ws = XLSX.utils.json_to_sheet(chunk);
+                            const wb = XLSX.utils.book_new();
+                            XLSX.utils.book_append_sheet(wb, ws, `นักศึกษา_ส่วนที่_${index + 1}`);
+                            XLSX.writeFile(wb, `รายชื่อนักศึกษา_LTC_ส่วน${index + 1}_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+                        });
+                        Swal.fire('สำเร็จ', `ส่งออกข้อมูล ${exportData.length} รายการ เป็น ${chunks.length} ไฟล์`, 'success');
+                    }
+                });
+            } else {
+                const ws = XLSX.utils.json_to_sheet(exportData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'รายชื่อนักศึกษา');
+                XLSX.writeFile(wb, `รายชื่อนักศึกษา_LTC_${new Date().toLocaleDateString('th-TH')}.xlsx`);
+                Swal.fire('สำเร็จ', `ส่งออกข้อมูล ${exportData.length} รายการ`, 'success');
+            }
+        } else {
+            throw new Error(result.message);
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        Swal.fire('ผิดพลาด', 'ไม่สามารถส่งออกข้อมูลได้', 'error');
+    } finally {
+        Swal.close();
+    }
 }
 
 function printToPDF() {
@@ -541,8 +970,6 @@ function printToPDF() {
                 table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
                 th, td { border: 1px solid #000; padding: 6px 3px; text-align: left; vertical-align: top; }
                 th { background: #f0f0f0; font-weight: bold; text-align: center; font-size: 11px; }
-                td { text-align: left; }
-                td:first-child, td:nth-child(2), td:nth-child(4), td:nth-child(5), td:nth-child(7) { text-align: center; }
                 .signature-col { text-align: center; font-size: 10px; }
                 .footer { margin-top: 15px; text-align: right; font-size: 12px; }
                 .signature { margin-top: 20px; display: flex; justify-content: space-between; }
@@ -551,7 +978,6 @@ function printToPDF() {
                 @media print {
                     body { padding: 0; margin: 0.5cm; }
                     table { page-break-inside: avoid; }
-                    tr { page-break-inside: avoid; page-break-after: avoid; }
                 }
             </style>
         </head>
@@ -614,9 +1040,29 @@ function printToPDF() {
 
 // ==================== ฟังก์ชันช่วยเหลือ ====================
 
+function loadSampleData() {
+    students = [
+        { id: '1', code: '69301040060', prefix: 'นาย', firstname: 'ธนพล', lastname: 'ลัดดาแย้ม', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0812345678', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
+        { id: '2', code: '69301040061', prefix: 'นาย', firstname: 'รณกร', lastname: 'วิพัฒนกำจร', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0823456789', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
+        { id: '3', code: '69301040083', prefix: 'นาย', firstname: 'กิตติธัช', lastname: 'มาเสริฐ', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0834567890', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
+        { id: '4', code: '69301040095', prefix: 'นาย', firstname: 'วัชระพงษ์', lastname: 'สมสะกิจ', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0845678901', status: 'กำลังศึกษา', created_at: new Date().toISOString() },
+        { id: '5', code: '69301040096', prefix: 'นาย', firstname: 'ภูรี', lastname: 'ราชอาด', level: 'ปวส.1', room: '1/6', major: 'ไฟฟ้ากำลัง', serial: 'บ่าย', phone: '0856789012', status: 'กำลังศึกษา', created_at: new Date().toISOString() }
+    ];
+    
+    totalStudents = students.length;
+    totalPages = Math.ceil(totalStudents / pageSize);
+    
+    if (USE_LOCAL_STORAGE) {
+        localStorage.setItem('ltc_students', JSON.stringify(students));
+    }
+    renderTable();
+    updateStats();
+    updatePaginationControls();
+}
+
 function showLoading(show) {
     const tbody = document.getElementById('studentTableBody');
-    if (show && students.length === 0) {
+    if (show && (!students || students.length === 0) && tbody) {
         tbody.innerHTML = '<tr><td colspan="10" class="loading">⏳ กำลังโหลดข้อมูล...</td></tr>';
     }
 }
@@ -637,67 +1083,144 @@ function closeModal() {
 }
 
 function resetFilters() {
-    document.getElementById('filterLevel').value = '';
-    document.getElementById('filterMajor').value = '';
-    document.getElementById('filterSerial').value = '';
-    document.getElementById('searchInput').value = '';
-    renderTable();
+    const levelFilter = document.getElementById('filterLevel');
+    const majorFilter = document.getElementById('filterMajor');
+    const serialFilter = document.getElementById('filterSerial');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (levelFilter) levelFilter.value = '';
+    if (majorFilter) majorFilter.value = '';
+    if (serialFilter) serialFilter.value = '';
+    if (searchInput) searchInput.value = '';
+    
+    currentPage = 1;
+    loadStudents(true);
 }
 
 // ==================== Event Listeners ====================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // ตรวจสอบ URL ที่บันทึกไว้
+    const savedUrl = localStorage.getItem('ltc_gas_url');
+    if (savedUrl && savedUrl.includes('script.google.com')) {
+        GAS_URL = savedUrl;
+    }
+    
     if (!checkAuth()) return;
     
     loadStudents();
+    setupSearchDebounce();
     
-    document.getElementById('addBtn').onclick = openModal;
-    document.querySelector('.close').onclick = closeModal;
+    // ปุ่มต่างๆ
+    const addBtn = document.getElementById('addBtn');
+    if (addBtn) addBtn.onclick = openModal;
+    
+    const closeBtn = document.querySelector('.close');
+    if (closeBtn) closeBtn.onclick = closeModal;
+    
     document.querySelectorAll('.cancelBtn').forEach(btn => btn.onclick = closeModal);
-    window.onclick = (e) => { if (e.target === document.getElementById('studentModal')) closeModal(); };
     
-    document.getElementById('studentForm').onsubmit = (e) => {
-        e.preventDefault();
-        const studentData = {
-            id: document.getElementById('studentId').value,
-            code: document.getElementById('studentCode').value,
-            prefix: document.getElementById('prefix').value,
-            firstname: document.getElementById('firstName').value,
-            lastname: document.getElementById('lastName').value,
-            level: document.getElementById('level').value,
-            room: document.getElementById('room').value,
-            major: document.getElementById('major').value,
-            serial: document.getElementById('serial').value,
-            phone: document.getElementById('phone').value,
-            status: document.getElementById('status').value
-        };
-        saveStudent(studentData);
+    window.onclick = (e) => {
+        const modal = document.getElementById('studentModal');
+        if (e.target === modal) closeModal();
     };
     
-    document.getElementById('searchBtn').onclick = renderTable;
-    document.getElementById('resetBtn').onclick = resetFilters;
-    document.getElementById('refreshBtn').onclick = loadStudents;
-    document.getElementById('exportBtn').onclick = exportToExcel;
-    document.getElementById('printBtn').onclick = printToPDF;
-    document.getElementById('logoutBtn').onclick = logout;
-    
-    document.getElementById('importBtn').onclick = () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.xlsx, .xls, .csv';
-        input.onchange = (e) => {
-            if (e.target.files[0]) importExcel(e.target.files[0]);
+    const studentForm = document.getElementById('studentForm');
+    if (studentForm) {
+        studentForm.onsubmit = (e) => {
+            e.preventDefault();
+            const studentData = {
+                id: document.getElementById('studentId').value,
+                code: document.getElementById('studentCode').value,
+                prefix: document.getElementById('prefix').value,
+                firstname: document.getElementById('firstName').value,
+                lastname: document.getElementById('lastName').value,
+                level: document.getElementById('level').value,
+                room: document.getElementById('room').value,
+                major: document.getElementById('major').value,
+                serial: document.getElementById('serial').value,
+                phone: document.getElementById('phone').value,
+                status: document.getElementById('status').value
+            };
+            saveStudent(studentData);
         };
-        input.click();
-    };
+    }
     
-    document.getElementById('selectAll').onchange = (e) => {
-        if (currentUser.role === 'admin') {
-            document.querySelectorAll('.studentCheckbox').forEach(cb => cb.checked = e.target.checked);
+    const searchBtn = document.getElementById('searchBtn');
+    if (searchBtn) searchBtn.onclick = () => loadStudents(true);
+    
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) resetBtn.onclick = resetFilters;
+    
+    const refreshBtn = document.getElementById('refreshBtn');
+    if (refreshBtn) refreshBtn.onclick = () => loadStudents(true);
+    
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) exportBtn.onclick = exportToExcel;
+    
+    const printBtn = document.getElementById('printBtn');
+    if (printBtn) printBtn.onclick = printToPDF;
+    
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) logoutBtn.onclick = logout;
+    
+    // ปุ่ม Bulk Actions
+    const bulkActionBtn = document.createElement('button');
+    bulkActionBtn.id = 'bulkActionBtn';
+    bulkActionBtn.className = 'btn btn-info admin-only';
+    bulkActionBtn.innerHTML = '📦 จัดการกลุ่ม';
+    bulkActionBtn.onclick = showBulkActions;
+    
+    // ปุ่มส่งออกทั้งหมด
+    const exportLargeBtn = document.createElement('button');
+    exportLargeBtn.id = 'exportLargeBtn';
+    exportLargeBtn.className = 'btn btn-warning';
+    exportLargeBtn.innerHTML = '📊 ส่งออกทั้งหมด';
+    exportLargeBtn.onclick = exportLargeData;
+    
+    const toolbar = document.getElementById('toolbar');
+    if (toolbar) {
+        const importBtn = document.getElementById('importBtn');
+        if (importBtn) {
+            importBtn.onclick = () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.xlsx, .xls, .csv';
+                input.onchange = (e) => {
+                    if (e.target.files[0]) importExcel(e.target.files[0]);
+                };
+                input.click();
+            };
         }
-    };
+        
+        toolbar.appendChild(bulkActionBtn);
+        toolbar.appendChild(exportLargeBtn);
+    }
     
-    document.getElementById('searchInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') renderTable();
-    });
+    // Select All checkbox
+    const selectAll = document.getElementById('selectAll');
+    if (selectAll) {
+        selectAll.onchange = (e) => {
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.studentCheckbox').forEach(cb => cb.checked = e.target.checked);
+            }
+        };
+    }
+    
+    // Filter change events
+    const filterLevel = document.getElementById('filterLevel');
+    const filterMajor = document.getElementById('filterMajor');
+    const filterSerial = document.getElementById('filterSerial');
+    
+    if (filterLevel) filterLevel.onchange = () => loadStudents(true);
+    if (filterMajor) filterMajor.onchange = () => loadStudents(true);
+    if (filterSerial) filterSerial.onchange = () => loadStudents(true);
+    
+    // Search enter key
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadStudents(true);
+        });
+    }
 });
