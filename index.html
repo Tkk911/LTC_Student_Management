@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการรายชื่อนักศึกษา LTC</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo-section">
+                    <div class="logo">
+                        <div class="logo-letters">
+                            <span>L</span>
+                            <span>T</span>
+                            <span>C</span>
+                        </div>
+                        <div class="logo-text">
+                            <span class="laemthong">LAEMTHONG</span>
+                            <span class="technology">TECHNOLOGY</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="title-section">
+                    <h1>📋 ระบบจัดการรายชื่อนักศึกษา</h1>
+                    <p>Laemthong Technology College Ver2.0</p>
+                </div>
+                <div class="user-info">
+                    <div class="user-badge">
+                        <span id="userRoleBadge" class="role-badge"></span>
+                        <span id="userNameDisplay"></span>
+                        <button id="logoutBtn" class="btn-logout">🚪 ออกจากระบบ</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div class="filter-section">
+            <div class="filter-group">
+                <label>📚 ระดับชั้น:</label>
+                <select id="filterLevel">
+                    <option value="">ทั้งหมด</option>
+                    <option value="ปวช.1">ปวช.1</option>
+                    <option value="ปวช.2">ปวช.2</option>
+                    <option value="ปวช.3">ปวช.3</option>
+                    <option value="ปวส.1">ปวส.1</option>
+                    <option value="ปวส.2">ปวส.2</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🎯 สาขาวิชา:</label>
+                <select id="filterMajor">
+                    <option value="">ทั้งหมด</option>
+                    <option value="การบัญชี">การบัญชี</option>
+                    <option value="การตลาด">การตลาด</option>
+                    <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                    <option value="ไฟฟ้ากำลัง">ไฟฟ้ากำลัง</option>
+                    <option value="อิเล็กทรอนิกส์">อิเล็กทรอนิกส์</option>
+                    <option value="เทคนิคยานยนต์">เทคนิคยานยนต์</option>
+                    <option value="ธุรกิจดิจิทัล">ธุรกิจดิจิทัล</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>⏰ รอบเรียน:</label>
+                <select id="filterSerial">
+                    <option value="">ทั้งหมด</option>
+                    <option value="เช้า">เช้า</option>
+                    <option value="บ่าย">บ่าย</option>
+                    <option value="เทียบโอน">เทียบโอน</option>
+                    <option value="เดินเรียน">เดินเรียน</option>
+                    <option value="ทวิภาคี">ทวิภาคี</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>🔍 ค้นหา:</label>
+                <input type="text" id="searchInput" placeholder="รหัสนักศึกษา หรือ ชื่อ-สกุล">
+            </div>
+            <button id="searchBtn" class="btn btn-primary">🔍 ค้นหา</button>
+            <button id="resetBtn" class="btn btn-secondary">🔄 รีเซ็ต</button>
+        </div>
+
+        <div class="toolbar" id="toolbar">
+            <button id="addBtn" class="btn btn-success admin-only">➕ เพิ่มนักเรียน</button>
+            <button id="importBtn" class="btn btn-info admin-only">📂 นำเข้า Excel/CSV</button>
+            <button id="exportBtn" class="btn btn-warning">📎 ส่งออก Excel</button>
+            <button id="printBtn" class="btn btn-danger">🖨️ พิมพ์ PDF (25 คอลัมน์เซ็นชื่อ)</button>
+            <button id="refreshBtn" class="btn btn-secondary">🔄 โหลดข้อมูล</button>
+        </div>
+
+        <div id="studentModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">เพิ่มข้อมูลนักศึกษา</h2>
+                    <span class="close">&times;</span>
+                </div>
+                <form id="studentForm">
+                    <input type="hidden" id="studentId">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>รหัสนักศึกษา <span class="required">*</span>:</label>
+                            <input type="text" id="studentCode" required placeholder="เช่น 69301040060">
+                        </div>
+                        <div class="form-group">
+                            <label>คำนำหน้า:</label>
+                            <select id="prefix">
+                                <option value="นาย">นาย</option>
+                                <option value="นางสาว">นางสาว</option>
+                                <option value="นาง">นาง</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ชื่อ <span class="required">*</span>:</label>
+                            <input type="text" id="firstName" required placeholder="ชื่อ">
+                        </div>
+                        <div class="form-group">
+                            <label>นามสกุล <span class="required">*</span>:</label>
+                            <input type="text" id="lastName" required placeholder="นามสกุล">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>ระดับชั้น:</label>
+                            <select id="level">
+                                <option value="ปวช.1">ปวช.1</option>
+                                <option value="ปวช.2">ปวช.2</option>
+                                <option value="ปวช.3">ปวช.3</option>
+                                <option value="ปวส.1">ปวส.1</option>
+                                <option value="ปวส.2">ปวส.2</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ห้อง/หมู่เรียน:</label>
+                            <input type="text" id="room" placeholder="เช่น 1/6">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>สาขาวิชา:</label>
+                            <select id="major">
+                                <option value="การบัญชี">การบัญชี</option>
+                                <option value="การตลาด">การตลาด</option>
+                                <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                                <option value="ไฟฟ้ากำลัง">ไฟฟ้ากำลัง</option>
+                                <option value="อิเล็กทรอนิกส์">อิเล็กทรอนิกส์</option>
+                                <option value="เทคนิคยานยนต์">เทคนิคยานยนต์</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>รอบเรียน:</label>
+                            <select id="serial">
+                                <option value="เช้า">เช้า</option>
+                                <option value="บ่าย">บ่าย</option>
+                                <option value="เทียบโอน">เทียบโอน</option>
+                                <option value="เดินเรียน">เดินเรียน</option>
+                                <option value="ทวิภาคี">ทวิภาคี</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>📞 เบอร์โทร:</label>
+                            <input type="text" id="phone" placeholder="0812345678">
+                        </div>
+                        <div class="form-group">
+                            <label>สถานะ:</label>
+                            <select id="status">
+                                <option value="กำลังศึกษา">✅ กำลังศึกษา</option>
+                                <option value="พักการเรียน">⏸ พักการเรียน</option>
+                                <option value="ลาออก">🚪 ลาออก</option>
+                                <option value="จบการศึกษา">🎓 จบการศึกษา</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-success">💾 บันทึก</button>
+                        <button type="button" class="btn btn-secondary cancelBtn">ยกเลิก</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="studentTable">
+                <thead>
+                    <tr>
+                        <th width="40"><input type="checkbox" id="selectAll"></th>
+                        <th width="50">ลำดับ</th>
+                        <th width="120">รหัสนักศึกษา</th>
+                        <th width="200">ชื่อ-สกุล</th>
+                        <th width="80">ระดับชั้น</th>
+                        <th width="60">ห้อง</th>
+                        <th width="130">สาขาวิชา</th>
+                        <th width="70">รอบเรียน</th>
+                        <th width="80">สถานะ</th>
+                        <th width="100" class="admin-only">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTableBody">
+                    <tr>
+                        <td colspan="10" class="loading">⏳ กำลังโหลดข้อมูล...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <span class="stat-icon">📊</span>
+                <div class="stat-info">
+                    <label>จำนวนนักเรียนทั้งหมด</label>
+                    <strong id="totalCount">0</strong>
+                    <span>คน</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-icon">📖</span>
+                <div class="stat-info">
+                    <label>กำลังศึกษา</label>
+                    <strong id="activeCount">0</strong>
+                    <span>คน</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-icon">🎓</span>
+                <div class="stat-info">
+                    <label>จบการศึกษา</label>
+                    <strong id="graduatedCount">0</strong>
+                    <span>คน</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
