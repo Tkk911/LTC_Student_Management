@@ -1,3 +1,10 @@
+/* ==================== LTC Student Management System - Main Stylesheet ==================== */
+/* วิทยาลัยเทคโนโลยีแหมทอง (Laemthong Technology College) */
+/* ระบบจัดการรายชื่อนักศึกษา - ฉบับสมบูรณ์ */
+/* Version: 3.0 */
+/* Last Updated: 2026-05-29 */
+
+/* ==================== Reset & Base Styles ==================== */
 * {
     margin: 0;
     padding: 0;
@@ -16,6 +23,7 @@ body {
     margin: 0 auto;
 }
 
+/* ==================== Header Styles ==================== */
 header {
     background: linear-gradient(135deg, #0d1b4a, #1a2a6c);
     color: white;
@@ -144,8 +152,10 @@ header {
 
 .btn-logout:hover {
     background: rgba(255,255,255,0.3);
+    transform: translateY(-1px);
 }
 
+/* ==================== Filter Section Styles ==================== */
 .filter-section {
     background: white;
     padding: 20px;
@@ -178,6 +188,7 @@ header {
     font-size: 14px;
     min-width: 150px;
     font-family: inherit;
+    transition: all 0.3s;
 }
 
 .filter-group select:focus,
@@ -187,6 +198,7 @@ header {
     box-shadow: 0 0 0 3px rgba(26,42,108,0.1);
 }
 
+/* ==================== Toolbar Styles ==================== */
 .toolbar {
     background: white;
     padding: 15px 20px;
@@ -198,6 +210,7 @@ header {
     box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+/* ==================== Button Styles ==================== */
 .btn {
     padding: 8px 16px;
     border: none;
@@ -226,9 +239,17 @@ header {
     color: white;
 }
 
+.btn-primary:hover {
+    background: #0b7dda;
+}
+
 .btn-secondary {
     background: #6c757d;
     color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
 }
 
 .btn-success {
@@ -236,9 +257,17 @@ header {
     color: white;
 }
 
+.btn-success:hover {
+    background: #45a049;
+}
+
 .btn-info {
     background: #00bcd4;
     color: white;
+}
+
+.btn-info:hover {
+    background: #0097a7;
 }
 
 .btn-warning {
@@ -246,11 +275,20 @@ header {
     color: white;
 }
 
+.btn-warning:hover {
+    background: #fb8c00;
+}
+
 .btn-danger {
     background: #f44336;
     color: white;
 }
 
+.btn-danger:hover {
+    background: #da190b;
+}
+
+/* ==================== Table Styles ==================== */
 .table-container {
     background: white;
     border-radius: 12px;
@@ -276,12 +314,14 @@ th {
     position: sticky;
     top: 0;
     color: #333;
+    white-space: nowrap;
 }
 
 tr:hover {
     background: #f5f5f5;
 }
 
+/* Status Badges */
 .status-badge {
     display: inline-block;
     padding: 4px 10px;
@@ -305,6 +345,17 @@ tr:hover {
     color: #2196f3;
 }
 
+.status-suspended {
+    background: #fff3e0;
+    color: #ff9800;
+}
+
+.status-dropped {
+    background: #ffebee;
+    color: #f44336;
+}
+
+/* Action Buttons */
 .action-buttons {
     display: flex;
     gap: 5px;
@@ -315,6 +366,21 @@ tr:hover {
     font-size: 11px;
 }
 
+/* Checkbox */
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* ==================== Modal Styles ==================== */
 .modal {
     display: none;
     position: fixed;
@@ -380,6 +446,7 @@ tr:hover {
     transform: scale(1.1);
 }
 
+/* Form Styles */
 form {
     padding: 25px;
 }
@@ -416,6 +483,7 @@ form {
     border-radius: 8px;
     font-size: 14px;
     font-family: inherit;
+    transition: all 0.3s;
 }
 
 .form-group input:focus,
@@ -432,6 +500,7 @@ form {
     justify-content: flex-end;
 }
 
+/* ==================== Stats Section ==================== */
 .stats {
     background: white;
     padding: 20px;
@@ -451,6 +520,11 @@ form {
     padding: 10px;
     background: #f8f9fa;
     border-radius: 10px;
+    transition: transform 0.3s;
+}
+
+.stat-box:hover {
+    transform: translateY(-3px);
 }
 
 .stat-icon {
@@ -478,12 +552,143 @@ form {
     color: #999;
 }
 
-.loading {
-    text-align: center;
-    padding: 40px;
-    color: #999;
+/* ==================== Pagination Styles ==================== */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    padding: 20px;
+    background: white;
+    border-radius: 12px;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+.pagination-info {
+    font-size: 14px;
+    color: #666;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn-pagination {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s;
+}
+
+.btn-pagination:hover:not(:disabled) {
+    background: #1a2a6c;
+    color: white;
+    border-color: #1a2a6c;
+}
+
+.btn-pagination:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    padding: 6px 12px;
+    background: #f0f0f0;
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+.page-size-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+
+.page-size-selector select {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* ==================== Guest Mode Styles ==================== */
+body.guest-mode .admin-only {
+    display: none !important;
+}
+
+body.guest-mode .action-buttons {
+    display: none;
+}
+
+body.guest-mode .studentCheckbox {
+    display: none;
+}
+
+/* ==================== Scrollbar Styles ==================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ==================== Loading Overlay ==================== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    background: white;
+    padding: 20px 40px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.loading-spinner::before {
+    content: "⏳";
+    margin-right: 10px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* ==================== Print Styles ==================== */
 @media print {
     body {
         background: white;
@@ -491,8 +696,16 @@ form {
         margin: 0;
     }
     
-    .filter-section, .toolbar, .stats, .btn, .modal, header, .user-info, .admin-only {
-        display: none;
+    .filter-section, 
+    .toolbar, 
+    .stats, 
+    .btn, 
+    .modal, 
+    header, 
+    .user-info, 
+    .admin-only,
+    .pagination-container {
+        display: none !important;
     }
     
     .table-container {
@@ -523,6 +736,22 @@ form {
     .signature-col {
         width: 18px;
         font-size: 8px;
+    }
+    
+    .container {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* ==================== Responsive Styles ==================== */
+@media (max-width: 1024px) {
+    .stats {
+        gap: 15px;
+    }
+    
+    .stat-box {
+        min-width: 150px;
     }
 }
 
@@ -555,6 +784,7 @@ form {
     .filter-group select,
     .filter-group input {
         width: 100%;
+        min-width: auto;
     }
     
     .toolbar {
@@ -565,6 +795,10 @@ form {
         flex-direction: column;
     }
     
+    .stat-box {
+        width: 100%;
+    }
+    
     .form-row {
         flex-direction: column;
     }
@@ -572,37 +806,198 @@ form {
     .form-group {
         min-width: 100%;
     }
+    
+    .pagination-container {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pagination-controls {
+        justify-content: center;
+    }
+    
+    .page-size-selector {
+        justify-content: center;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10% auto;
+    }
+    
+    th, td {
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    
+    .action-buttons button {
+        padding: 2px 4px;
+    }
 }
 
-input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
+@media (max-width: 480px) {
+    .title-section h1 {
+        font-size: 20px;
+    }
+    
+    .toolbar .btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+    
+    .stat-info strong {
+        font-size: 22px;
+    }
+    
+    .pagination-controls {
+        gap: 4px;
+    }
+    
+    .btn-pagination {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
 }
 
-::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+/* ==================== Animation Classes ==================== */
+.fade-in {
+    animation: fadeIn 0.5s ease;
 }
 
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
+.slide-in {
+    animation: slideDown 0.3s ease;
 }
 
-::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 10px;
+.pulse {
+    animation: pulse 2s infinite;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #555;
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 1;
+    }
 }
 
-.admin-only {
-    display: inline-flex;
+/* ==================== Utility Classes ==================== */
+.text-center {
+    text-align: center;
 }
 
-body.guest-mode .admin-only {
-    display: none !important;
+.text-right {
+    text-align: right;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.mt-1 { margin-top: 5px; }
+.mt-2 { margin-top: 10px; }
+.mt-3 { margin-top: 15px; }
+.mt-4 { margin-top: 20px; }
+
+.mb-1 { margin-bottom: 5px; }
+.mb-2 { margin-bottom: 10px; }
+.mb-3 { margin-bottom: 15px; }
+.mb-4 { margin-bottom: 20px; }
+
+.ml-1 { margin-left: 5px; }
+.ml-2 { margin-left: 10px; }
+.mr-1 { margin-right: 5px; }
+.mr-2 { margin-right: 10px; }
+
+.p-1 { padding: 5px; }
+.p-2 { padding: 10px; }
+.p-3 { padding: 15px; }
+.p-4 { padding: 20px; }
+
+/* ==================== Dark Mode Support ==================== */
+@media (prefers-color-scheme: dark) {
+    /* This is optional - you can enable dark mode if needed */
+    /* Currently keeping light mode as default */
+}
+
+/* ==================== Print Signature Table Specific ==================== */
+.signature-col {
+    text-align: center;
+    font-size: 10px;
+}
+
+.signature-line {
+    margin-top: 30px;
+    border-top: 1px solid #000;
+    width: 100%;
+}
+
+.signature {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.signature div {
+    text-align: center;
+    width: 200px;
+    font-size: 13px;
+}
+
+/* ==================== SweetAlert Override ==================== */
+.swal2-popup {
+    font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+    font-size: 14px !important;
+}
+
+.swal2-title {
+    font-size: 20px !important;
+}
+
+.swal2-html-container {
+    font-size: 14px !important;
+}
+
+.swal2-select {
+    font-family: 'Sarabun', sans-serif !important;
+    padding: 8px !important;
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+}
+
+/* ==================== Hover Effects ==================== */
+tr {
+    transition: background-color 0.2s ease;
+}
+
+.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn:active::after {
+    width: 100%;
+    height: 100%;
+}
+
+/* ==================== Focus Visible for Accessibility ==================== */
+:focus-visible {
+    outline: 2px solid #1a2a6c;
+    outline-offset: 2px;
 }
