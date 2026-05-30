@@ -1,14 +1,12 @@
 // ============================================================================
 // LTC Student Management System - Frontend Script (Full Version)
-// Version: 6.0
+// Version: 6.1 - Fixed & Production Ready
 // เชื่อมต่อกับ Google Apps Script Backend
 // ============================================================================
 
 // ==================== CONFIGURATION ====================
 // 🔴 IMPORTANT: ใส่ URL ที่ได้จากการ Deploy GAS ตรงนี้!!!
-// หลังจาก Deploy GAS แล้ว ให้คัดลอก URL มาใส่ตรงนี้
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzqZlSUER7y9yqKIbDzbw58104d4VWtvTzrK8-dJzxItWeTf4_3vDAY1PlC8fFSqT9OsA/exec';
-// คำแนะนำ: ให้เปลี่ยน YOUR_DEPLOYMENT_ID เป็น ID ที่ได้จากการ Deploy จริง
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzaAfeFT1di1iOTcx8_PF7iwHMXT8ly40oM0PDLHM0rnc3LMeFs72KAhxqTiH-vSz5egQ/exec';
 
 // ตัวแปร Global
 let studentsData = [];
@@ -54,7 +52,7 @@ async function callAPI(action, data = {}, method = 'GET') {
         };
         
         // ถ้าเป็น POST ให้ใส่ body
-        if (method === 'POST' && Object.keys(data).length > 0) {
+        if (method === 'POST') {
             options.body = JSON.stringify({ action, ...data });
         }
         
@@ -105,6 +103,23 @@ async function loadStudentsData() {
     try {
         showLoading(true);
         studentsData = await callAPI('getStudents', {}, 'GET');
+        
+        // แก้ไขข้อมูล room ที่เป็นวันที่ผิดพลาด
+        studentsData = studentsData.map(student => {
+            if (student.room && typeof student.room === 'string' && student.room.includes('T')) {
+                student.room = '';
+            }
+            // แก้ไข student_code ให้เป็น string
+            if (student.student_code) {
+                student.student_code = String(student.student_code);
+            }
+            // แก้ไข phone ให้เป็น string
+            if (student.phone) {
+                student.phone = String(student.phone);
+            }
+            return student;
+        });
+        
         console.log('Loaded students:', studentsData.length, 'records');
         displayStudentsTable();
         updateDashboard();
@@ -117,7 +132,7 @@ async function loadStudentsData() {
         showNotification('error', 'ไม่สามารถโหลดข้อมูลได้ กรุณาตรวจสอบการเชื่อมต่อ');
         
         // แสดงข้อความแจ้งเตือนให้ตั้งค่า URL
-        if (GAS_URL === 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec') {
+        if (GAS_URL === 'https://script.google.com/macros/s/AKfycbzaAfeFT1di1iOTcx8_PF7iwHMXT8ly40oM0PDLHM0rnc3LMeFs72KAhxqTiH-vSz5egQ/exec') {
             document.getElementById('studentTableBody').innerHTML = 
                 '<tr><td colspan="10" class="loading">⚠️ กรุณาตั้งค่า GAS_URL ในไฟล์ script.js ให้ถูกต้อง<br>หลังจาก Deploy GAS แล้ว ให้คัดลอก URL มาใส่ใน const GAS_URL</td></tr>';
         }
@@ -145,7 +160,7 @@ async function loadFilteredStudents() {
  */
 function showLoading(show) {
     const tbody = document.getElementById('studentTableBody');
-    if (show && tbody && studentsData === undefined) {
+    if (show && tbody && (!studentsData || studentsData.length === 0)) {
         tbody.innerHTML = '<tr><td colspan="10" class="loading"><i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...</td></tr>';
     }
 }
@@ -157,7 +172,7 @@ function updateFilters() {
     if (!studentsData || studentsData.length === 0) return;
     
     // อัปเดตระดับชั้น
-    const levels = [...new Set(studentsData.map(s => s.level).filter(l => l))].sort();
+    const levels = [...new Set(studentsData.map(s => s.level).filter(l => l && l !== '2026-05-31T17:00:00.000Z'))].sort();
     const levelSelect = document.getElementById('filterLevel');
     if (levelSelect) {
         const currentValue = levelSelect.value;
@@ -217,6 +232,15 @@ function checkLoginStatus() {
             roleBadge.innerHTML = '👑 ผู้ดูแลระบบ';
             roleBadge.classList.add('admin');
         }
+    } else if (role === 'teacher') {
+        currentUserRole = 'teacher';
+        currentUserName = name || 'อาจารย์';
+        document.body.classList.remove('guest-mode');
+        const roleBadge = document.getElementById('userRoleBadge');
+        if (roleBadge) {
+            roleBadge.innerHTML = '📚 อาจารย์';
+            roleBadge.classList.add('teacher');
+        }
     } else {
         currentUserRole = 'guest';
         currentUserName = name || 'ผู้เยี่ยมชม';
@@ -263,6 +287,7 @@ function displayStudentsTable() {
         const statusClass = student.status === 'กำลังศึกษา' ? 'status-active' : 
                            (student.status === 'จบการศึกษา' ? 'status-graduated' : 'status-inactive');
         const fullName = `${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}`;
+        const roomDisplay = (student.room && !student.room.includes('T')) ? student.room : '-';
         
         html += `
             <tr>
@@ -271,7 +296,7 @@ function displayStudentsTable() {
                 <td>${student.student_code || ''}</td>
                 <td>${fullName}</td>
                 <td>${student.level || ''}</td>
-                <td>${student.room || '-'}</td>
+                <td>${roomDisplay}</td>
                 <td>${student.major || ''}</td>
                 <td>${student.serial || ''}</td>
                 <td><span class="status-badge ${statusClass}">${student.status || ''}</span></td>
@@ -296,7 +321,7 @@ function updateStats(filteredData) {
     // อัปเดตสถิติรวม (ไม่ใช้ filter)
     const activeCount = studentsData.filter(s => s.status === 'กำลังศึกษา').length;
     const graduatedCount = studentsData.filter(s => s.status === 'จบการศึกษา').length;
-    const uniqueMajors = new Set(studentsData.map(s => s.major));
+    const uniqueMajors = new Set(studentsData.map(s => s.major).filter(m => m));
     
     const activeCountEl = document.getElementById('activeCount');
     if (activeCountEl) activeCountEl.textContent = activeCount;
@@ -362,6 +387,7 @@ async function updateDashboard() {
         }
         
         updateCharts(stats);
+        displayRecentStudents();
     } catch (error) {
         console.error('Dashboard error:', error);
     }
@@ -372,12 +398,16 @@ function updateCharts(stats) {
     const levelCtx = document.getElementById('levelChart')?.getContext('2d');
     if (levelCtx) {
         if (levelChart) levelChart.destroy();
+        
+        const levelLabels = Object.keys(stats.byLevel || {}).filter(l => l !== '2026-05-31T17:00:00.000Z');
+        const levelData = levelLabels.map(l => stats.byLevel[l]);
+        
         levelChart = new Chart(levelCtx, {
             type: 'pie',
             data: {
-                labels: Object.keys(stats.byLevel || {}),
+                labels: levelLabels,
                 datasets: [{
-                    data: Object.values(stats.byLevel || {}),
+                    data: levelData,
                     backgroundColor: ['#667eea', '#764ba2', '#f56565', '#48bb78', '#ed8936', '#4299e1', '#38b2ac', '#805ad5'],
                     borderWidth: 0
                 }]
@@ -424,6 +454,35 @@ function updateCharts(stats) {
             }
         });
     }
+}
+
+function displayRecentStudents() {
+    const tbody = document.getElementById('recentStudentsBody');
+    if (!tbody || !studentsData) return;
+    
+    const recentStudents = [...studentsData].slice(0, 5);
+    
+    if (recentStudents.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="loading">ไม่มีข้อมูล</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    recentStudents.forEach(student => {
+        const fullName = `${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}`;
+        const statusClass = student.status === 'กำลังศึกษา' ? 'status-active' : 
+                           (student.status === 'จบการศึกษา' ? 'status-graduated' : 'status-inactive');
+        html += `
+            <tr>
+                <td>${student.student_code || '-'}</td>
+                <td>${fullName}</td>
+                <td>${student.level || '-'}</td>
+                <td>${student.major || '-'}</td>
+                <td><span class="status-badge ${statusClass}">${student.status || '-'}</span></td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
 }
 
 // ==================== CRUD Operations ====================
@@ -508,7 +567,7 @@ function editStudent(id) {
         document.getElementById('firstName').value = student.first_name || '';
         document.getElementById('lastName').value = student.last_name || '';
         document.getElementById('level').value = student.level || 'ปวส.1';
-        document.getElementById('room').value = student.room || '';
+        document.getElementById('room').value = (student.room && !student.room.includes('T')) ? student.room : '';
         document.getElementById('major').value = student.major || 'คอมพิวเตอร์ธุรกิจ';
         document.getElementById('serial').value = student.serial || 'เช้า';
         document.getElementById('phone').value = student.phone || '';
@@ -558,28 +617,16 @@ function exportToExcel() {
         'ชื่อ': s.first_name,
         'นามสกุล': s.last_name,
         'ระดับชั้น': s.level,
-        'ห้อง': s.room,
+        'ห้อง': (s.room && !s.room.includes('T')) ? s.room : '',
         'สาขาวิชา': s.major,
         'รอบเรียน': s.serial,
         'เบอร์โทร': s.phone,
-        'อีเมล': s.email || '',
-        'ที่อยู่': s.address || '',
-        'ชื่อผู้ปกครอง': s.parent_name || '',
-        'เบอร์ผู้ปกครอง': s.parent_phone || '',
         'สถานะ': s.status
     }));
     
     const ws = XLSX.utils.json_to_sheet(worksheetData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Student_Data');
-    
-    // Adjust column widths
-    ws['!cols'] = [
-        {wch:8}, {wch:15}, {wch:10}, {wch:15}, {wch:15},
-        {wch:12}, {wch:8}, {wch:18}, {wch:10}, {wch:12},
-        {wch:20}, {wch:30}, {wch:15}, {wch:15}, {wch:12}
-    ];
-    
     XLSX.writeFile(wb, `students_${new Date().toISOString().split('T')[0]}.xlsx`);
     showNotification('success', 'ส่งออกข้อมูลเรียบร้อย');
 }
@@ -613,12 +660,13 @@ function printWithSignatures() {
     html += '</tr></thead><tbody>';
     
     printData.forEach((student, index) => {
+        const roomDisplay = (student.room && !student.room.includes('T')) ? student.room : '';
         html += `<tr>
             <td style="border:1px solid #000; padding:5px; text-align:center;">${index + 1}</td>
             <td style="border:1px solid #000; padding:5px;">${student.student_code || ''}</td>
             <td style="border:1px solid #000; padding:5px;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
             <td style="border:1px solid #000; padding:5px; text-align:center;">${student.level || ''}</td>
-            <td style="border:1px solid #000; padding:5px;">${student.major || ''}</td>`;
+            <td style="border:1px solid #000; padding:5px;">${student.major || ''} ${roomDisplay}</td>`;
         
         for (let i = 1; i <= 25; i++) {
             html += `<td style="border:1px solid #000; width:30px; text-align:center;">&nbsp;</td>`;
@@ -644,7 +692,6 @@ function printWithSignatures() {
                 th { background: #f0f0f0; font-weight: bold; }
                 .signature-line { margin-top: 30px; text-align: right; }
                 @media print {
-                    button { display: none; }
                     body { margin: 0; padding: 10px; }
                 }
             </style>
@@ -664,7 +711,7 @@ function printWithSignatures() {
                     setTimeout(() => { window.print(); }, 500);
                     setTimeout(() => { window.close(); }, 1000);
                 }
-            </script>
+            <\/script>
         </body>
         </html>
     `);
@@ -702,7 +749,7 @@ function importExcelFile() {
                 }
                 
                 const newStudents = rows.map((row) => ({
-                    student_code: row['รหัสนักศึกษา'] || row['code'] || row['รหัส'] || '',
+                    student_code: String(row['รหัสนักศึกษา'] || row['code'] || row['รหัส'] || ''),
                     prefix: row['คำนำหน้า'] || row['prefix'] || 'นาย',
                     first_name: row['ชื่อ'] || row['firstName'] || row['first_name'] || '',
                     last_name: row['นามสกุล'] || row['lastName'] || row['last_name'] || '',
@@ -710,9 +757,9 @@ function importExcelFile() {
                     room: row['ห้อง'] || row['room'] || '',
                     major: row['สาขาวิชา'] || row['major'] || 'คอมพิวเตอร์ธุรกิจ',
                     serial: row['รอบเรียน'] || row['serial'] || 'เช้า',
-                    phone: row['เบอร์โทร'] || row['phone'] || row['เบอร์โทรศัพท์'] || '',
+                    phone: String(row['เบอร์โทร'] || row['phone'] || row['เบอร์โทรศัพท์'] || ''),
                     status: row['สถานะ'] || row['status'] || 'กำลังศึกษา'
-                })).filter(s => s.student_code); // กรองเฉพาะที่มีรหัสนักศึกษา
+                })).filter(s => s.student_code);
                 
                 const result = await callAPI('importStudents', { students: newStudents }, 'POST');
                 showNotification('success', `นำเข้าข้อมูลสำเร็จ ${result.imported || newStudents.length} รายการ${result.failed ? ` (ล้มเหลว ${result.failed} รายการ)` : ''}`);
@@ -770,12 +817,13 @@ async function generateAttendanceTable() {
     html += '</tr></thead><tbody>';
     
     filteredData.forEach((student, index) => {
+        const roomDisplay = (student.room && !student.room.includes('T')) ? student.room : '';
         html += `<tr>
             <td style="border:1px solid #000; padding:6px; text-align:center;">${index + 1}</td>
             <td style="border:1px solid #000; padding:6px;">${student.student_code || ''}</td>
             <td style="border:1px solid #000; padding:6px;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
             <td style="border:1px solid #000; padding:6px; text-align:center;">${student.level || ''}</td>
-            <td style="border:1px solid #000; padding:6px;">${student.major || ''}</td>`;
+            <td style="border:1px solid #000; padding:6px;">${student.major || ''} ${roomDisplay}</td>`;
         
         for (let i = 1; i <= 25; i++) {
             html += `<td style="border:1px solid #000; width:35px; text-align:center;">&nbsp;</td>`;
@@ -813,7 +861,6 @@ function printAttendance() {
                 th { background: #f0f0f0; font-weight: bold; }
                 @media print {
                     body { margin: 0; padding: 10px; }
-                    .no-print { display: none; }
                 }
             </style>
         </head>
@@ -824,7 +871,7 @@ function printAttendance() {
                     setTimeout(() => { window.print(); }, 500);
                     setTimeout(() => { window.close(); }, 1000);
                 }
-            </script>
+            <\/script>
         </body>
         </html>
     `);
@@ -847,7 +894,7 @@ async function generateReport() {
     const statusStats = { 'กำลังศึกษา': 0, 'พักการเรียน': 0, 'ลาออก': 0, 'จบการศึกษา': 0 };
     
     reportData.forEach(s => {
-        if (s.level) levelStats[s.level] = (levelStats[s.level] || 0) + 1;
+        if (s.level && s.level !== '2026-05-31T17:00:00.000Z') levelStats[s.level] = (levelStats[s.level] || 0) + 1;
         if (s.major) majorStats[s.major] = (majorStats[s.major] || 0) + 1;
         if (s.serial) serialStats[s.serial] = (serialStats[s.serial] || 0) + 1;
         if (s.status) statusStats[s.status] = (statusStats[s.status] || 0) + 1;
@@ -891,7 +938,6 @@ async function generateReport() {
         </div>
     `;
     
-    // Add student list
     html += `
         <div style="margin-top: 30px;">
             <h4>📋 รายชื่อนักศึกษา</h4>
@@ -908,17 +954,19 @@ async function generateReport() {
                     </tr>
                 </thead>
                 <tbody>
-                    ${reportData.map((s, idx) => `
+                    ${reportData.map((s, idx) => {
+                        const roomDisplay = (s.room && !s.room.includes('T')) ? s.room : '';
+                        return `
                         <tr>
                             <td style="border:1px solid #ddd; padding:6px; text-align:center;">${idx + 1}</td>
                             <td style="border:1px solid #ddd; padding:6px;">${s.student_code || ''}</td>
                             <td style="border:1px solid #ddd; padding:6px;">${s.prefix || ''}${s.first_name || ''} ${s.last_name || ''}</td>
                             <td style="border:1px solid #ddd; padding:6px; text-align:center;">${s.level || ''}</td>
-                            <td style="border:1px solid #ddd; padding:6px;">${s.major || ''}</td>
+                            <td style="border:1px solid #ddd; padding:6px;">${s.major || ''} ${roomDisplay}</td>
                             <td style="border:1px solid #ddd; padding:6px; text-align:center;">${s.serial || ''}</td>
                             <td style="border:1px solid #ddd; padding:6px; text-align:center;">${s.status || ''}</td>
                         </tr>
-                    `).join('')}
+                    `}).join('')}
                     ${reportData.length === 0 ? '<tr><td colspan="7" style="text-align:center;">ไม่มีข้อมูล</td></tr>' : ''}
                 </tbody>
             </table>
@@ -944,7 +992,7 @@ function exportReportToExcel() {
         'ชื่อ': s.first_name,
         'นามสกุล': s.last_name,
         'ระดับชั้น': s.level,
-        'ห้อง': s.room,
+        'ห้อง': (s.room && !s.room.includes('T')) ? s.room : '',
         'สาขาวิชา': s.major,
         'รอบเรียน': s.serial,
         'เบอร์โทร': s.phone,
@@ -1143,20 +1191,6 @@ function setupEventListeners() {
     if (searchInput) {
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') filterStudents();
-        });
-    }
-    
-    // Attendance filters change
-    const attendanceLevel = document.getElementById('attendanceLevel');
-    if (attendanceLevel) {
-        attendanceLevel.addEventListener('change', function() {
-            const majorSelect = document.getElementById('attendanceMajor');
-            if (majorSelect && this.value) {
-                // Filter majors based on level if needed
-                majorSelect.disabled = false;
-            } else if (majorSelect && !this.value) {
-                majorSelect.disabled = true;
-            }
         });
     }
 }
