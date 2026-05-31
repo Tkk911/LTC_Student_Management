@@ -132,10 +132,10 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo-mini">
-                    <span>LTC</span>
+                    <img src="logoLTC.png" alt="LTC Logo" style="width: 110%; height: 110%; object-fit: contain;">
                 </div>
-                <h3>LTC System</h3>
-                <p>Ver 6.0</p>
+                <h3>LTC Student System</h3>
+                <p>กลุ่มงานไฟฟ้าและอิเล็กทรอนิกส์</p>
             </div>
             <nav class="sidebar-nav">
                 <a href="#" class="nav-item active" data-page="dashboard">
@@ -153,6 +153,10 @@
                 <a href="#" class="nav-item" data-page="reports">
                     <i class="fas fa-chart-bar"></i>
                     <span>รายงาน</span>
+                </a>
+                <a href="https://tkk911.github.io/Student-Grade-Management-System_Manager_LTC/" target="_blank" class="nav-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>ตรวจสอบผลการเรียน</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
@@ -179,7 +183,7 @@
                 </button>
                 <div class="header-title">
                     <h1>ระบบจัดการรายชื่อนักศึกษา</h1>
-                    <p>Laemthong Technology College</p>
+                    <h3>Laemthong Technology College</h3>
                 </div>
                 <div class="user-info-header">
                     <div class="user-badge">
@@ -311,7 +315,11 @@
                     <button id="resetBtn" class="btn btn-secondary"><i class="fas fa-undo-alt"></i> รีเซ็ต</button>
                 </div>
 
-                <div class="action-toolbar">
+                <div class="action-toolbar" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="font-size: 13px; font-weight: bold; white-space: nowrap;"><i class="fas fa-calendar-alt"></i> ภาคเรียน:</label>
+                        <input type="text" id="printTerm" value="ประจำภาคเรียนที่ 1 ปีการศึกษา 2569" placeholder="ภาคเรียน เช่น ประจำภาคเรียนที่ 1 ปีการศึกษา 2569" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 250px; background: var(--card-bg); color: var(--text-primary);">
+                    </div>
                     <button id="addBtn" class="btn btn-success admin-only"><i class="fas fa-plus"></i> เพิ่มนักเรียน</button>
                     <button id="importBtn" class="btn btn-info admin-only"><i class="fas fa-file-import"></i> นำเข้า Excel/CSV</button>
                     <button id="exportBtn" class="btn btn-warning"><i class="fas fa-file-export"></i> ส่งออก Excel</button>
@@ -350,7 +358,8 @@
             <div id="attendancePage" class="page-content">
                 <div class="attendance-header">
                     <h2><i class="fas fa-clipboard-list"></i> ใบเช็คชื่อนักศึกษา</h2>
-                    <div class="attendance-controls">
+                    <div class="attendance-controls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="attendanceTerm" value="ประจำภาคเรียนที่ 1 ปีการศึกษา 2567" placeholder="ระบุภาคเรียน/ปีการศึกษา" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 250px; background: var(--card-bg); color: var(--text-primary);">
                         <select id="attendanceLevel">
                             <option value="">เลือกระดับชั้น</option>
                             <option value="ปวช.1">ปวช.1</option>
@@ -358,6 +367,9 @@
                             <option value="ปวช.3">ปวช.3</option>
                             <option value="ปวส.1">ปวส.1</option>
                             <option value="ปวส.2">ปวส.2</option>
+                        </select>
+                        <select id="attendanceRoom">
+                            <option value="">เลือกห้อง</option>
                         </select>
                         <select id="attendanceMajor">
                             <option value="">เลือกสาขาวิชา</option>
@@ -392,6 +404,9 @@
                         <option value="ปวช.3">ปวช.3</option>
                         <option value="ปวส.1">ปวส.1</option>
                         <option value="ปวส.2">ปวส.2</option>
+                    </select>
+                    <select id="reportRoom">
+                        <option value="">ทุกห้อง</option>
                     </select>
                     <select id="reportMajor">
                         <option value="">ทุกสาขาวิชา</option>
