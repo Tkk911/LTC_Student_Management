@@ -133,13 +133,14 @@ body {
 .logo-mini {
     width: 60px;
     height: 60px;
-    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    background: transparent;
     border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 0 auto 12px;
     transition: transform var(--transition-speed);
+    overflow: hidden;
 }
 
 .logo-mini:hover {
