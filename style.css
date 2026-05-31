@@ -21,6 +21,7 @@
     --dark-bg: #1a1a2e;
     --light-bg: #f7fafc;
     --card-bg: #ffffff;
+    --card-bg-rgb: 255, 255, 255;
     --text-primary: #2d3748;
     --text-secondary: #718096;
     --text-muted: #a0aec0;
@@ -44,6 +45,7 @@
     --primary-light: #8b5cf6;
     --secondary-color: #a855f7;
     --card-bg: #1f2937;
+    --card-bg-rgb: 31, 41, 55;
     --text-primary: #f3f4f6;
     --text-secondary: #9ca3af;
     --text-muted: #6b7280;
@@ -339,9 +341,11 @@ input:checked + .slider:before {
     font-weight: 600;
 }
 
-.header-title p {
+.header-title p,
+.header-title h3 {
     font-size: 12px;
     color: var(--text-secondary);
+    font-weight: normal;
 }
 
 .user-badge {
