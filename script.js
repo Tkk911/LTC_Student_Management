@@ -638,13 +638,13 @@ function printWithSignatures() {
     
     let html = '<table style="width:100%; border-collapse: collapse; table-layout: fixed;">';
     html += '<thead><tr>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:3.0%; height:28px; text-align:center;">ลำดับ</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:8.5%; text-align:center;">รหัสนักศึกษา</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:14.5%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:5.5%; text-align:center;">ระดับชั้น</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:4.0%; text-align:center;">ห้อง</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:12%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:4.5%; text-align:center;">รอบ</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:2.5%; height:28px; text-align:center;">ลำดับ</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:8.0%; text-align:center;">รหัสนักศึกษา</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:17.5%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:4.5%; text-align:center;">ระดับชั้น</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:3.5%; text-align:center;">ห้อง</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:12.0%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:3.5%; text-align:center;">รอบ</th>';
     
     for (let i = 1; i <= 25; i++) {
         html += `<th style="border:1px solid #000; font-size:8px; font-weight:bold; width:1.94%; text-align:center;">&nbsp;</th>`;
@@ -655,13 +655,13 @@ function printWithSignatures() {
     printData.forEach((student, index) => {
         const roomDisplay = (student.room && !student.room.includes('T')) ? student.room : '';
         html += `<tr style="height: 28px;">
-            <td style="border:1px solid #000; text-align:center; font-size:11px;">${index + 1}</td>
-            <td style="border:1px solid #000; text-align:center; font-size:11px;">${student.student_code || ''}</td>
-            <td style="border:1px solid #000; text-align:left; font-size:11px; padding-left:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
-            <td style="border:1px solid #000; text-align:center; font-size:11px;">${student.level || ''}</td>
-            <td style="border:1px solid #000; text-align:center; font-size:11px;">${roomDisplay}</td>
-            <td style="border:1px solid #000; text-align:left; font-size:11px; padding-left:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${student.major || ''}</td>
-            <td style="border:1px solid #000; text-align:center; font-size:11px;">${student.serial || ''}</td>`;
+            <td style="border:1px solid #000; text-align:center; font-size:12px;">${index + 1}</td>
+            <td style="border:1px solid #000; text-align:center; font-size:12px;">${student.student_code || ''}</td>
+            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; word-wrap:break-word;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
+            <td style="border:1px solid #000; text-align:center; font-size:12px;">${student.level || ''}</td>
+            <td style="border:1px solid #000; text-align:center; font-size:12px;">${roomDisplay}</td>
+            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; word-wrap:break-word;">${student.major || ''}</td>
+            <td style="border:1px solid #000; text-align:center; font-size:12px;">${student.serial || ''}</td>`;
         
         for (let i = 1; i <= 25; i++) {
             html += `<td style="border:1px solid #000; text-align:center;">&nbsp;</td>`;
@@ -937,11 +937,11 @@ async function generateAttendanceTable() {
     
     html += '<table class="attendance-table" style="width:100%; border-collapse: collapse; table-layout: fixed;">';
     html += '<thead><tr>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:3.5%; height:28px; text-align:center;">ลำดับ</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:9.0%; text-align:center;">รหัสนักศึกษา</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:16.0%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:6.0%; text-align:center;">ระดับชั้น</th>';
-    html += '<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:15.5%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:3.0%; height:28px; text-align:center;">ลำดับ</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:8.0%; text-align:center;">รหัสนักศึกษา</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:18.0%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:5.0%; text-align:center;">ระดับชั้น</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:15.5%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
     
     for (let i = 1; i <= 25; i++) {
         html += `<th style="border:1px solid #000; font-size:8px; font-weight:bold; width:2.02%; text-align:center;">&nbsp;</th>`;
@@ -954,9 +954,9 @@ async function generateAttendanceTable() {
         html += `<tr style="height: 28px;">
             <td style="border:1px solid #000; text-align:center; font-size:12px;">${index + 1}</td>
             <td style="border:1px solid #000; text-align:center; font-size:12px;">${student.student_code || ''}</td>
-            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
+            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; word-wrap:break-word;">${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}</td>
             <td style="border:1px solid #000; text-align:center; font-size:12px;">${student.level || ''}</td>
-            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${student.major || ''} ${roomDisplay}</td>`;
+            <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; word-wrap:break-word;">${student.major || ''} ${roomDisplay}</td>`;
         
         for (let i = 1; i <= 25; i++) {
             html += `<td style="border:1px solid #000; text-align:center;">&nbsp;</td>`;
