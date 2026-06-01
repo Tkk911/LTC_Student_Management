@@ -891,6 +891,7 @@ async function generateAttendanceTable() {
     const level = document.getElementById('attendanceLevel')?.value;
     const room = document.getElementById('attendanceRoom')?.value;
     const major = document.getElementById('attendanceMajor')?.value;
+    const serial = document.getElementById('attendanceSerial')?.value;
     const termVal = document.getElementById('attendanceTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2567';
     
     if (!level) {
@@ -907,6 +908,9 @@ async function generateAttendanceTable() {
     }
     if (major && major !== '') {
         filteredData = filteredData.filter(s => s.major === major);
+    }
+    if (serial && serial !== '') {
+        filteredData = filteredData.filter(s => s.serial === serial);
     }
     
     if (filteredData.length === 0) {
@@ -927,7 +931,7 @@ async function generateAttendanceTable() {
         <hr style="border: 0.5px solid #000; margin: 5px 0 5px 0;">
         
         <div class="meta-container" style="font-size: 9px; margin-top: 5px; margin-bottom: 5px; text-align: center;">
-            ระดับชั้น: ${level} &nbsp;|&nbsp; สาขาวิชา: ${major || 'ทั้งหมด'} &nbsp;|&nbsp; จำนวนนักศึกษา: ${filteredData.length} คน
+            ระดับชั้น: ${level} &nbsp;|&nbsp; สาขาวิชา: ${major || 'ทั้งหมด'} &nbsp;|&nbsp; รอบเรียน: ${serial || 'ทั้งหมด'} &nbsp;|&nbsp; จำนวนนักศึกษา: ${filteredData.length} คน
         </div>
     `;
     
@@ -1064,6 +1068,7 @@ async function generateReport() {
     const level = document.getElementById('reportLevel')?.value;
     const room = document.getElementById('reportRoom')?.value;
     const major = document.getElementById('reportMajor')?.value;
+    const serial = document.getElementById('reportSerial')?.value;
     
     let reportData = studentsData;
     if (level && level !== '') reportData = reportData.filter(s => s.level === level);
@@ -1074,6 +1079,7 @@ async function generateReport() {
         });
     }
     if (major && major !== '') reportData = reportData.filter(s => s.major === major);
+    if (serial && serial !== '') reportData = reportData.filter(s => s.serial === serial);
     
     const levelStats = {};
     const majorStats = {};
@@ -1090,7 +1096,7 @@ async function generateReport() {
     let html = `
         <div style="margin-bottom: 20px;">
             <h3>📊 สรุปข้อมูลนักศึกษา</h3>
-            <p><strong>เงื่อนไข:</strong> ${level ? 'ระดับชั้น ' + level : 'ทุกระดับชั้น'} ${major ? ' | สาขา ' + major : ''}</p>
+            <p><strong>เงื่อนไข:</strong> ${level ? 'ระดับชั้น ' + level : 'ทุกระดับชั้น'} ${major ? ' | สาขา ' + major : ''} ${serial ? ' | รอบเรียน ' + serial : ''}</p>
             <p><strong>จำนวนนักเรียนทั้งหมด:</strong> ${reportData.length} คน</p>
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
@@ -1112,6 +1118,12 @@ async function generateReport() {
                     ${Object.entries(statusStats).filter(([_,v]) => v > 0).map(([k,v]) => `<tr><td>${k}</td><td><strong>${v}</strong> คน</td></tr>`).join('')}
                 </table>
             </div>
+            <div style="background: var(--card-bg, white); padding: 15px; border-radius: 12px; border: 1px solid #ddd;">
+                <h4>🕒 จำแนกตามรอบเรียน</h4>
+                <table style="width:100%; border-collapse: collapse;">
+                    ${Object.entries(serialStats).map(([k,v]) => `<tr><td>${k}</td><td><strong>${v}</strong> คน</td></tr>`).join('')}
+                </table>
+            </div>
         </div>
     `;
     
@@ -1127,10 +1139,12 @@ function exportReportToExcel() {
     
     const level = document.getElementById('reportLevel')?.value;
     const major = document.getElementById('reportMajor')?.value;
+    const serial = document.getElementById('reportSerial')?.value;
     
     let reportData = studentsData;
     if (level && level !== '') reportData = reportData.filter(s => s.level === level);
     if (major && major !== '') reportData = reportData.filter(s => s.major === major);
+    if (serial && serial !== '') reportData = reportData.filter(s => s.serial === serial);
     
     const worksheetData = reportData.map((s, idx) => ({
         'ลำดับ': idx + 1,
