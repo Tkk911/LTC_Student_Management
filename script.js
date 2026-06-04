@@ -893,6 +893,8 @@ async function generateAttendanceTable() {
     const major = document.getElementById('attendanceMajor')?.value;
     const serial = document.getElementById('attendanceSerial')?.value;
     const termVal = document.getElementById('attendanceTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2567';
+    const teacherVal = document.getElementById('attendanceTeacher')?.value || '';
+    const subjectVal = document.getElementById('attendanceSubject')?.value || '';
     
     if (!level) {
         showNotification('warning', 'กรุณาเลือกระดับชั้น');
@@ -926,6 +928,8 @@ async function generateAttendanceTable() {
             <h2 class="college-th" style="font-size: 18px; font-weight: 700; color: #002060; margin: 0 0 4px 0;">วิทยาลัยเทคโนโลยีแหลมทอง</h2>
             <h3 class="title-report" style="font-size: 16px; font-weight: 700; color: #000; margin: 0 0 3px 0;">ใบเช็คชื่อนักศึกษา</h3>
             <p class="subtitle-report" style="font-size: 12px; color: #000; margin: 0 0 5px 0;">${termVal}</p>
+            ${subjectVal ? `<p class="subtitle-report" style="font-size: 12px; color: #000; margin: 0 0 5px 0;">รายวิชา: ${subjectVal}</p>` : ''}
+            ${teacherVal ? `<p class="subtitle-report" style="font-size: 12px; color: #000; margin: 0 0 5px 0;">ครูผู้สอน/ที่ปรึกษา: ${teacherVal}</p>` : ''}
         </div>
         
         <hr style="border: 0.5px solid #000; margin: 5px 0 5px 0;">
@@ -937,15 +941,20 @@ async function generateAttendanceTable() {
     
     html += '<table class="attendance-table" style="width:100%; border-collapse: collapse; table-layout: fixed;">';
     html += '<thead><tr>';
-    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:3.0%; height:28px; text-align:center;">ลำดับ</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:3.0%; height:120px; text-align:center;">ลำดับ</th>';
     html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:8.0%; text-align:center;">รหัสนักศึกษา</th>';
-    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:18.0%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:15.0%; text-align:left; padding-left:5px;">ชื่อ-สกุล</th>';
     html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:5.0%; text-align:center;">ระดับชั้น</th>';
-    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:15.5%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
+    html += '<th style="border:1px solid #000; font-size:12px; font-weight:bold; width:12.0%; text-align:left; padding-left:5px;">สาขาวิชา</th>';
     
     for (let i = 1; i <= 25; i++) {
-        html += `<th style="border:1px solid #000; font-size:8px; font-weight:bold; width:2.02%; text-align:center;">&nbsp;</th>`;
+        html += `<th style="border:1px solid #000; font-size:11px; font-weight:bold; width:1.8%; text-align:center; padding:0;"><input type="text" class="attendance-date-input" data-col="${i}" placeholder="ว/ด/ป" style="writing-mode: vertical-rl; transform: rotate(180deg); width:100%; height:120px; box-sizing:border-box; border:none; text-align:center; font-size:11px; background:transparent; font-family: inherit; outline:none;" onchange="saveAttendanceDraft()"></th>`;
     }
+    
+    html += `<th style="border:1px solid #000; font-size:10px; font-weight:bold; width:3.0%; text-align:center;">มา</th>`;
+    html += `<th style="border:1px solid #000; font-size:10px; font-weight:bold; width:3.0%; text-align:center;">ขาด</th>`;
+    html += `<th style="border:1px solid #000; font-size:10px; font-weight:bold; width:3.0%; text-align:center;">ลา</th>`;
+    html += `<th style="border:1px solid #000; font-size:10px; font-weight:bold; width:3.0%; text-align:center;">สาย</th>`;
     
     html += '</tr></thead><tbody>';
     
@@ -959,8 +968,21 @@ async function generateAttendanceTable() {
             <td style="border:1px solid #000; text-align:left; font-size:12px; padding-left:5px; word-wrap:break-word;">${student.major || ''} ${roomDisplay}</td>`;
         
         for (let i = 1; i <= 25; i++) {
-            html += `<td style="border:1px solid #000; text-align:center;">&nbsp;</td>`;
+            html += `<td style="border:1px solid #000; text-align:center; padding:0;">
+                <select class="attendance-select" data-row="${index}" data-col="${i}" data-student="${student.student_code || index}" style="width:100%; height:100%; box-sizing:border-box; border:none; text-align:center; font-size:11px; appearance:none; background:transparent; cursor:pointer;" onchange="calculateAttendance(${index}); saveAttendanceDraft()">
+                    <option value=""></option>
+                    <option value="ม">ม</option>
+                    <option value="ข">ข</option>
+                    <option value="ลา">ลา</option>
+                    <option value="ส">ส</option>
+                </select>
+            </td>`;
         }
+        
+        html += `<td style="border:1px solid #000; text-align:center; font-size:11px; font-weight:bold; color:green;" id="sum-present-${index}"></td>`;
+        html += `<td style="border:1px solid #000; text-align:center; font-size:11px; font-weight:bold; color:red;" id="sum-absent-${index}"></td>`;
+        html += `<td style="border:1px solid #000; text-align:center; font-size:11px; font-weight:bold; color:orange;" id="sum-leave-${index}"></td>`;
+        html += `<td style="border:1px solid #000; text-align:center; font-size:11px; font-weight:bold; color:blue;" id="sum-late-${index}"></td>`;
         
         html += `</tr>`;
     });
@@ -999,6 +1021,100 @@ async function generateAttendanceTable() {
     
     const container = document.getElementById('attendanceTableContainer');
     if (container) container.innerHTML = html;
+    
+    loadAttendanceDraft();
+}
+
+function getDraftKey() {
+    const level = document.getElementById('attendanceLevel')?.value || '';
+    const room = document.getElementById('attendanceRoom')?.value || '';
+    const major = document.getElementById('attendanceMajor')?.value || '';
+    const serial = document.getElementById('attendanceSerial')?.value || '';
+    const termVal = document.getElementById('attendanceTerm')?.value || '';
+    const teacher = document.getElementById('attendanceTeacher')?.value || '';
+    const subject = document.getElementById('attendanceSubject')?.value || '';
+    return `att_draft_${teacher}_${subject}_${level}_${room}_${major}_${serial}_${termVal}`;
+}
+
+function saveAttendanceDraft() {
+    const table = document.getElementById('attendancePrintTable');
+    if (!table) return;
+    
+    const draft = { dates: [], students: {} };
+    
+    const dateInputs = table.querySelectorAll('.attendance-date-input');
+    dateInputs.forEach(input => draft.dates.push(input.value));
+    
+    const selects = table.querySelectorAll('.attendance-select');
+    selects.forEach(select => {
+        const scode = select.getAttribute('data-student');
+        const col = select.getAttribute('data-col');
+        if (!draft.students[scode]) draft.students[scode] = {};
+        draft.students[scode][col] = select.value;
+    });
+    
+    localStorage.setItem(getDraftKey(), JSON.stringify(draft));
+}
+
+function loadAttendanceDraft() {
+    const draftJson = localStorage.getItem(getDraftKey());
+    if (!draftJson) return;
+    
+    try {
+        const draft = JSON.parse(draftJson);
+        const table = document.getElementById('attendancePrintTable');
+        if (!table) return;
+        
+        const dateInputs = table.querySelectorAll('.attendance-date-input');
+        dateInputs.forEach((input, idx) => {
+            if (draft.dates && draft.dates[idx] !== undefined) {
+                input.value = draft.dates[idx];
+            }
+        });
+        
+        const selects = table.querySelectorAll('.attendance-select');
+        let rowsToUpdate = new Set();
+        selects.forEach(select => {
+            const scode = select.getAttribute('data-student');
+            const col = select.getAttribute('data-col');
+            if (draft.students && draft.students[scode] && draft.students[scode][col]) {
+                select.value = draft.students[scode][col];
+                rowsToUpdate.add(select.getAttribute('data-row'));
+            }
+        });
+        
+        rowsToUpdate.forEach(rowIndex => calculateAttendance(rowIndex));
+    } catch (e) {
+        console.error("Error loading draft", e);
+    }
+}
+
+function clearAttendanceDraft() {
+    if (confirm('คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลการเช็คชื่อทั้งหมดที่กำลังบันทึกค้างไว้ในหน้าต่างนี้?')) {
+        localStorage.removeItem(getDraftKey());
+        generateAttendanceTable();
+        if (typeof showNotification === 'function') {
+            showNotification('success', 'ล้างข้อมูลสำเร็จ');
+        }
+    }
+}
+
+function calculateAttendance(rowIndex) {
+    const selects = document.querySelectorAll(`.attendance-select[data-row="${rowIndex}"]`);
+    let present = 0, absent = 0, leave = 0, late = 0;
+    
+    selects.forEach(select => {
+        const val = select.value;
+        if (val === 'ม') present++;
+        else if (val === 'ข') absent++;
+        else if (val === 'ลา') leave++;
+        else if (val === 'ส') late++;
+    });
+    
+    document.getElementById(`sum-present-${rowIndex}`).textContent = present > 0 ? present : '';
+    document.getElementById(`sum-absent-${rowIndex}`).textContent = absent > 0 ? absent : '';
+    document.getElementById(`sum-leave-${rowIndex}`).textContent = leave > 0 ? leave : '';
+    document.getElementById(`sum-late-${rowIndex}`).textContent = late > 0 ? late : '';
 }
 
 function printAttendance() {
@@ -1006,6 +1122,46 @@ function printAttendance() {
     if (!printContent) {
         showNotification('warning', 'กรุณาสร้างใบเช็คชื่อก่อนพิมพ์');
         return;
+    }
+    
+    // Clone the table to prepare for printing
+    const clonedContent = printContent.cloneNode(true);
+    
+    // Replace all inputs with their text values
+    const inputs = printContent.querySelectorAll('input');
+    const clonedInputs = clonedContent.querySelectorAll('input');
+    for (let i = 0; i < inputs.length; i++) {
+        const span = document.createElement('span');
+        span.textContent = inputs[i].value;
+        span.style.fontSize = inputs[i].style.fontSize;
+        span.style.fontWeight = inputs[i].style.fontWeight || 'normal';
+        span.style.display = 'inline-block';
+        span.style.width = '100%';
+        span.style.height = inputs[i].style.height || '100%';
+        span.style.textAlign = 'center';
+        
+        if (inputs[i].style.writingMode) {
+            span.style.writingMode = inputs[i].style.writingMode;
+        }
+        if (inputs[i].style.transform) {
+            span.style.transform = inputs[i].style.transform;
+        }
+        
+        clonedInputs[i].parentNode.replaceChild(span, clonedInputs[i]);
+    }
+    
+    // Replace all selects with their text values
+    const selects = printContent.querySelectorAll('select');
+    const clonedSelects = clonedContent.querySelectorAll('select');
+    for (let i = 0; i < selects.length; i++) {
+        const span = document.createElement('span');
+        span.textContent = selects[i].value;
+        span.style.fontSize = selects[i].style.fontSize;
+        span.style.fontWeight = selects[i].style.fontWeight || 'normal';
+        span.style.display = 'inline-block';
+        span.style.width = '100%';
+        span.style.textAlign = 'center';
+        clonedSelects[i].parentNode.replaceChild(span, clonedSelects[i]);
     }
     
     const printWindow = window.open('', '_blank');
@@ -1049,7 +1205,7 @@ function printAttendance() {
             </style>
         </head>
         <body>
-            ${printContent.innerHTML}
+            ${clonedContent.innerHTML}
             <script>
                 window.onload = function() { 
                     setTimeout(() => { window.print(); }, 500);
@@ -1261,6 +1417,8 @@ function setupEventListeners() {
     if (genAttendanceBtn) genAttendanceBtn.addEventListener('click', generateAttendanceTable);
     const printAttendanceBtn = document.getElementById('printAttendanceBtn');
     if (printAttendanceBtn) printAttendanceBtn.addEventListener('click', printAttendance);
+    const clearDraftBtn = document.getElementById('clearDraftBtn');
+    if (clearDraftBtn) clearDraftBtn.addEventListener('click', clearAttendanceDraft);
 
     // อัปเดตห้อง dropdown เมื่อเปลี่ยนระดับชั้น (ใบเช็คชื่อ)
     const attendanceLevelEl = document.getElementById('attendanceLevel');
