@@ -1,3 +1,672 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>LTC Student Management System - Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Additional inline styles for critical components */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #667eea;
+            --primary-dark: #5a67d8;
+            --secondary-color: #764ba2;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+            --danger-color: #f56565;
+            --info-color: #4299e1;
+            --dark-bg: #1a1a2e;
+            --light-bg: #f7fafc;
+            --card-bg: #ffffff;
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+            --sidebar-bg: linear-gradient(135deg, #2d1b4e 0%, #1a1f3a 100%);
+            --header-height: 70px;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #7c3aed;
+            --primary-dark: #6d28d9;
+            --card-bg: #1f2937;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --border-color: #374151;
+            --light-bg: #111827;
+            --sidebar-bg: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background: var(--light-bg);
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            overflow-x: hidden;
+        }
+
+        /* Quick Stats Animation */
+        .stat-card {
+            animation: fadeInUp 0.5s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-mini">
+                    <img src="logoLTC.png" alt="LTC Logo" style="width: 108%; height: 108%; object-fit: contain;">
+                </div>
+                <h3>LTC Student System</h3>
+                <h5>กลุ่มงานไฟฟ้าและอิเล็กทรอนิกส์</h5>
+                <p>Admin:tkk911:Vesion2.0_2569</p>
+                <p>✨🆕Update:31/5/2569📤</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>แดชบอร์ด</span>
+                </a>
+                <a href="#" class="nav-item" data-page="students">
+                    <i class="fas fa-users"></i>
+                    <span>จัดการนักศึกษา</span>
+                </a>
+                <a href="#" class="nav-item" data-page="attendance">
+                    <i class="fas fa-check-square"></i>
+                    <span>เช็คชื่อเรียน</span>
+                </a>
+                <a href="#" class="nav-item" data-page="reports">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>รายงาน</span>
+                </a>
+                <a href="https://tkk911.github.io/Student-Grade-Management-System_Manager_LTC/" target="_blank" class="nav-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>ตรวจสอบผลการเรียน</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="theme-switch-wrapper">
+                    <i class="fas fa-sun"></i>
+                    <label class="theme-switch">
+                        <input type="checkbox" id="themeToggle">
+                        <span class="slider round"></span>
+                    </label>
+                    <i class="fas fa-moon"></i>
+                </div>
+                <button id="logoutSidebar" class="btn-logout-sidebar">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <button id="sidebarToggle" class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-title">
+                    <h1>ระบบจัดการรายชื่อนักเรียนนักศึกษา</h1>
+                    <h3>Laemthong Technology College</h3>
+                </div>
+                <div class="user-info-header">
+                    <div class="user-badge">
+                        <span id="userRoleBadge" class="role-badge"></span>
+                        <span id="userNameDisplay"></span>
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div id="dashboardPage" class="page-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-user-graduate"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>นักเรียนทั้งหมด</h3>
+                            <div class="stat-number" id="totalCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>กำลังศึกษา</h3>
+                            <div class="stat-number" id="activeCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-chalkboard-user"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>สาขาวิชา</h3>
+                            <div class="stat-number" id="majorCount">0</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-details">
+                            <h3>จบการศึกษา</h3>
+                            <div class="stat-number" id="graduatedCount">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-pie"></i> สถิติแยกตามระดับชั้น</h3>
+                        <canvas id="levelChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3><i class="fas fa-chart-bar"></i> สถิติแยกตามสาขาวิชา</h3>
+                        <canvas id="majorChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <div class="recent-students-section" style="margin-top: 30px;">
+                    <div class="chart-card">
+                        <h3><i class="fas fa-clock"></i> นักเรียนที่เพิ่มล่าสุด</h3>
+                        <div style="overflow-x: auto;">
+                            <table style="width:100%;" id="recentStudentsTable">
+                                <thead>
+                                    <tr>
+                                        <th>รหัสนักศึกษา</th>
+                                        <th>ชื่อ-สกุล</th>
+                                        <th>ระดับชั้น</th>
+                                        <th>สาขาวิชา</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recentStudentsBody">
+                                    <tr><td colspan="5" class="loading">กำลังโหลด...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Management Page -->
+            <div id="studentsPage" class="page-content">
+                <div class="filter-bar">
+                    <div class="filter-group">
+                        <label><i class="fas fa-layer-group"></i> ระดับชั้น:</label>
+                        <select id="filterLevel">
+                            <option value="">ทั้งหมด</option>
+                            <option value="ปวช.1">ปวช.1</option>
+                            <option value="ปวช.2">ปวช.2</option>
+                            <option value="ปวช.3">ปวช.3</option>
+                            <option value="ปวส.1">ปวส.1</option>
+                            <option value="ปวส.2">ปวส.2</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-building"></i> สาขาวิชา:</label>
+                        <select id="filterMajor">
+                            <option value="">ทั้งหมด</option>
+                            <option value="การบัญชี">การบัญชี</option>
+                            <option value="การตลาด">การตลาด</option>
+                            <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                            <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                            <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                            <option value="ช่างยนต์">ช่างยนต์</option>
+			    <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+			    <option value="ช่างซ่อมบำรุง">ช่างซ่อมบำรุง</option>
+			    <option value="เทคโนโลยีอิเล็กทรอนิกส์">เทคโนโลยีอิเล็กทรอนิกส์</option>
+			    <option value="ไฟฟ้า">ไฟฟ้า</option>
+			    <option value="เทคนิคเครื่องกล">เทคนิคเครื่องกล</option>
+			    <option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
+                            <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล</option>
+                            <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label><i class="fas fa-clock"></i> รอบเรียน:</label>
+                        <select id="filterSerial">
+                            <option value="">ทั้งหมด</option>
+                            <option value="เช้า">เช้า</option>
+                            <option value="บ่าย">บ่าย</option>
+                            <option value="เทียบโอน">เทียบโอน</option>
+                            <option value="เดินเรียน">เดินเรียน</option>
+                            <option value="ทวิภาคี">ทวิภาคี</option>
+                        </select>
+                    </div>
+                    <div class="filter-group search-group">
+                        <label><i class="fas fa-search"></i> ค้นหา:</label>
+                        <input type="text" id="searchInput" placeholder="รหัสนักศึกษา หรือ ชื่อ-สกุล">
+                    </div>
+                    <button id="searchBtn" class="btn btn-primary"><i class="fas fa-search"></i> ค้นหา</button>
+                    <button id="resetBtn" class="btn btn-secondary"><i class="fas fa-undo-alt"></i> รีเซ็ต</button>
+                </div>
+
+                <div class="action-toolbar" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label style="font-size: 13px; font-weight: bold; white-space: nowrap;"><i class="fas fa-calendar-alt"></i> ภาคเรียน:</label>
+                        <input type="text" id="printTerm" value="ประจำภาคเรียนที่ 1 ปีการศึกษา 2569" placeholder="ภาคเรียน เช่น ประจำภาคเรียนที่ 1 ปีการศึกษา 2569" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 250px; background: var(--card-bg); color: var(--text-primary);">
+                    </div>
+                    <button id="addBtn" class="btn btn-success admin-only"><i class="fas fa-plus"></i> เพิ่มนักเรียน</button>
+                    <button id="importBtn" class="btn btn-info admin-only"><i class="fas fa-file-import"></i> นำเข้า Excel/CSV</button>
+                    <button id="exportBtn" class="btn btn-warning"><i class="fas fa-file-export"></i> ส่งออก Excel</button>
+                    <button id="printBtn" class="btn btn-danger"><i class="fas fa-print"></i> พิมพ์ PDF (25 คอลัมน์เซ็นชื่อ)</button>
+                    <button id="refreshBtn" class="btn btn-secondary"><i class="fas fa-sync-alt"></i> โหลดข้อมูล</button>
+                </div>
+
+                <div class="table-wrapper">
+                    <table id="studentTable">
+                        <thead>
+                            <tr>
+                                <th width="35"><input type="checkbox" id="selectAll"></th>
+                                <th width="50">#</th>
+                                <th width="120">รหัสนักศึกษา</th>
+                                <th width="200">ชื่อ-สกุล</th>
+                                <th width="80">ระดับชั้น</th>
+                                <th width="60">ห้อง</th>
+                                <th width="130">สาขาวิชา</th>
+                                <th width="70">รอบเรียน</th>
+                                <th width="80">สถานะ</th>
+                                <th width="100" class="admin-only">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTableBody">
+                            <tr>
+                                <td colspan="10" class="loading">
+                                    <i class="fas fa-spinner fa-spin"></i> กำลังโหลดข้อมูล...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Attendance Page -->
+            <div id="attendancePage" class="page-content">
+                <div class="attendance-header">
+                    <h2><i class="fas fa-clipboard-list"></i> ใบเช็คชื่อนักศึกษา</h2>
+                    <div class="attendance-controls" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="attendanceTerm" value="ประจำภาคเรียนที่ 1 ปีการศึกษา 2567" placeholder="ระบุภาคเรียน/ปีการศึกษา" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 250px; background: var(--card-bg); color: var(--text-primary);">
+                        <input type="text" id="attendanceTeacher" placeholder="ชื่อครูผู้สอน/ที่ปรึกษา" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 200px; background: var(--card-bg); color: var(--text-primary);">
+                        <input type="text" id="attendanceSubject" placeholder="ชื่อรายวิชา (ถ้ามี)" style="padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-family: inherit; font-size: 13px; width: 200px; background: var(--card-bg); color: var(--text-primary);">
+                        <select id="attendanceLevel">
+                            <option value="">เลือกระดับชั้น</option>
+                            <option value="ปวช.1">ปวช.1</option>
+                            <option value="ปวช.2">ปวช.2</option>
+                            <option value="ปวช.3">ปวช.3</option>
+                            <option value="ปวส.1">ปวส.1</option>
+                            <option value="ปวส.2">ปวส.2</option>
+                        </select>
+                        <select id="attendanceRoom">
+                            <option value="">เลือกห้อง</option>
+                        </select>
+                        <select id="attendanceMajor">
+                            <option value="">เลือกสาขาวิชา</option>
+                            <option value="การบัญชี">การบัญชี</option>
+                            <option value="การตลาด">การตลาด</option>
+                            <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                            <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                            <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                            <option value="ช่างยนต์">ช่างยนต์</option>
+			    <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+			    <option value="ช่างซ่อมบำรุง">ช่างซ่อมบำรุง</option>
+			    <option value="เทคโนโลยีอิเล็กทรอนิกส์">เทคโนโลยีอิเล็กทรอนิกส์</option>
+			    <option value="ไฟฟ้า">ไฟฟ้า</option>
+			    <option value="เทคนิคเครื่องกล">เทคนิคเครื่องกล</option>
+			    <option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
+                            <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล</option>
+                            <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                        </select>
+                        <select id="attendanceSerial">
+                            <option value="">เลือกรอบเรียน</option>
+                            <option value="เช้า">เช้า</option>
+                            <option value="บ่าย">บ่าย</option>
+                            <option value="เทียบโอน">เทียบโอน</option>
+                            <option value="เดินเรียน">เดินเรียน</option>
+                            <option value="ทวิภาคี">ทวิภาคี</option>
+                        </select>
+                        <button id="generateAttendanceBtn" class="btn btn-primary"><i class="fas fa-table"></i> สร้างใบเช็คชื่อ</button>
+                        <button id="printAttendanceBtn" class="btn btn-danger"><i class="fas fa-print"></i> พิมพ์ใบเช็คชื่อ</button>
+                        <button id="clearDraftBtn" class="btn btn-warning"><i class="fas fa-trash"></i> ล้างข้อมูล</button>
+                    </div>
+                </div>
+                <div id="attendanceTableContainer" class="attendance-container">
+                    <div class="loading" style="text-align:center; padding:40px;">
+                        <i class="fas fa-info-circle"></i> กรุณาเลือกระดับชั้นและคลิก "สร้างใบเช็คชื่อ"
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div id="reportsPage" class="page-content">
+                <div class="reports-header">
+                    <h2><i class="fas fa-chart-line"></i> รายงานข้อมูลนักศึกษา</h2>
+                </div>
+                <div class="reports-filters">
+                    <select id="reportLevel">
+                        <option value="">ทุกระดับชั้น</option>
+                        <option value="ปวช.1">ปวช.1</option>
+                        <option value="ปวช.2">ปวช.2</option>
+                        <option value="ปวช.3">ปวช.3</option>
+                        <option value="ปวส.1">ปวส.1</option>
+                        <option value="ปวส.2">ปวส.2</option>
+                    </select>
+                    <select id="reportRoom">
+                        <option value="">ทุกห้อง</option>
+                    </select>
+                    <select id="reportMajor">
+                        <option value="">ทุกสาขาวิชา</option>
+                        <option value="การบัญชี">การบัญชี</option>
+                        <option value="การตลาด">การตลาด</option>
+                        <option value="คอมพิวเตอร์ธุรกิจ">คอมพิวเตอร์ธุรกิจ</option>
+                        <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                        <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                        <option value="ช่างยนต์">ช่างยนต์</option>
+			<option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+			<option value="ช่างซ่อมบำรุง">ช่างซ่อมบำรุง</option>
+			<option value="เทคโนโลยีอิเล็กทรอนิกส์">เทคโนโลยีอิเล็กทรอนิกส์</option>
+			<option value="ไฟฟ้า">ไฟฟ้า</option>
+			<option value="เทคนิคเครื่องกล">เทคนิคเครื่องกล</option>
+			<option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
+                        <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล</option>
+                        <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                    </select>
+                    <select id="reportSerial">
+                        <option value="">ทุกรอบเรียน</option>
+                        <option value="เช้า">เช้า</option>
+                        <option value="บ่าย">บ่าย</option>
+                        <option value="เทียบโอน">เทียบโอน</option>
+                        <option value="เดินเรียน">เดินเรียน</option>
+                        <option value="ทวิภาคี">ทวิภาคี</option>
+                    </select>
+                    <button id="generateReportBtn" class="btn btn-primary"><i class="fas fa-chart-simple"></i> แสดงรายงาน</button>
+                    <button id="exportReportExcelBtn" class="btn btn-warning"><i class="fas fa-file-excel"></i> ส่งออก Excel</button>
+                </div>
+                <div id="reportResult" class="report-result">
+                    <div class="loading" style="text-align:center; padding:40px;">
+                        <i class="fas fa-chart-line"></i> คลิก "แสดงรายงาน" เพื่อดูข้อมูล
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Student Modal -->
+    <div id="studentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">เพิ่มข้อมูลนักศึกษา</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="studentForm">
+                <input type="hidden" id="studentId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>รหัสนักศึกษา <span class="required">*</span>:</label>
+                        <input type="text" id="studentCode" required placeholder="เช่น 69301040060">
+                    </div>
+                    <div class="form-group">
+                        <label>คำนำหน้า:</label>
+                        <select id="prefix">
+                            <option value="นาย">นาย</option>
+                            <option value="นางสาว">นางสาว</option>
+                            <option value="นาง">นาง</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ชื่อ <span class="required">*</span>:</label>
+                        <input type="text" id="firstName" required placeholder="ชื่อ">
+                    </div>
+                    <div class="form-group">
+                        <label>นามสกุล <span class="required">*</span>:</label>
+                        <input type="text" id="lastName" required placeholder="นามสกุล">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ระดับชั้น:</label>
+                        <select id="level">
+                            <option value="ปวช.1">ปวช.1</option>
+                            <option value="ปวช.2">ปวช.2</option>
+                            <option value="ปวช.3">ปวช.3</option>
+                            <option value="ปวส.1" selected>ปวส.1</option>
+                            <option value="ปวส.2">ปวส.2</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ห้อง/หมู่เรียน:</label>
+                        <input type="text" id="room" placeholder="เช่น 1/6">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>สาขาวิชา:</label>
+                        <select id="major">
+                            <option value="การบัญชี">การบัญชี</option>
+                            <option value="การตลาด">การตลาด</option>
+                            <option value="คอมพิวเตอร์ธุรกิจ" selected>คอมพิวเตอร์ธุรกิจ</option>
+                            <option value="ช่างไฟฟ้ากำลัง">ช่างไฟฟ้ากำลัง</option>
+                            <option value="ช่างอิเล็กทรอนิกส์">ช่างอิเล็กทรอนิกส์</option>
+                            <option value="ช่างยนต์">ช่างยนต์</option>
+			    <option value="ช่างกลโรงงาน">ช่างกลโรงงาน</option>
+			    <option value="ช่างซ่อมบำรุง">ช่างซ่อมบำรุง</option>
+			    <option value="เทคโนโลยีอิเล็กทรอนิกส์">เทคโนโลยีอิเล็กทรอนิกส์</option>
+			    <option value="ไฟฟ้า">ไฟฟ้า</option>
+			    <option value="เทคนิคเครื่องกล">เทคนิคเครื่องกล</option>
+			    <option value="เทคนิคการผลิต">เทคนิคการผลิต</option>
+                            <option value="เทคโนโลยีธุรกิจดิจิทัล">เทคโนโลยีธุรกิจดิจิทัล</option>
+                            <option value="การจัดการโลจิสติกส์">การจัดการโลจิสติกส์</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>รอบเรียน:</label>
+                        <select id="serial">
+                            <option value="เช้า">เช้า</option>
+                            <option value="บ่าย">บ่าย</option>
+                            <option value="เทียบโอน">เทียบโอน</option>
+                            <option value="เดินเรียน">เดินเรียน</option>
+                            <option value="ทวิภาคี">ทวิภาคี</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-phone"></i> เบอร์โทร:</label>
+                        <input type="text" id="phone" placeholder="0812345678">
+                    </div>
+                    <div class="form-group">
+                        <label>สถานะ:</label>
+                        <select id="status">
+                            <option value="กำลังศึกษา">✅ กำลังศึกษา</option>
+                            <option value="พักการเรียน">⏸ พักการเรียน</option>
+                            <option value="ลาออก">🚪 ลาออก</option>
+                            <option value="จบการศึกษา">🎓 จบการศึกษา</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> บันทึก</button>
+                    <button type="button" class="btn btn-secondary cancelBtn">ยกเลิก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+    
+    <script>
+        // Additional initialization for mobile sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile sidebar toggle
+            const menuToggle = document.querySelector('.menu-toggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            if (menuToggle && sidebar) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('mobile-open');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(event) {
+                if (window.innerWidth <= 768) {
+                    const isClickInside = sidebar?.contains(event.target);
+                    const isClickOnToggle = menuToggle?.contains(event.target);
+                    
+                    if (!isClickInside && !isClickOnToggle && sidebar?.classList.contains('mobile-open')) {
+                        sidebar.classList.remove('mobile-open');
+                    }
+                }
+            });
+            
+            // Add active class to current nav item based on page
+            const currentPage = localStorage.getItem('currentPage') || 'dashboard';
+            const navItem = document.querySelector(`.nav-item[data-page="${currentPage}"]`);
+            if (navItem) {
+                document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+                navItem.classList.add('active');
+                switchPage(currentPage);
+            }
+            
+            // Save current page when navigating
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.dataset.page;
+                    localStorage.setItem('currentPage', page);
+                });
+            });
+        });
+        
+        // Display recent students on dashboard
+        function displayRecentStudents() {
+            const tbody = document.getElementById('recentStudentsBody');
+            if (!tbody || !studentsData) return;
+            
+            const recentStudents = [...studentsData].sort((a, b) => {
+                return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+            }).slice(0, 5);
+            
+            if (recentStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="loading">ไม่มีข้อมูล</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            recentStudents.forEach(student => {
+                const fullName = `${student.prefix || ''}${student.first_name || ''} ${student.last_name || ''}`;
+                const statusClass = student.status === 'กำลังศึกษา' ? 'status-active' : 
+                                   (student.status === 'จบการศึกษา' ? 'status-graduated' : 'status-inactive');
+                html += `
+                    <tr>
+                        <td>${student.student_code || '-'}</td>
+                        <td>${fullName}</td>
+                        <td>${student.level || '-'}</td>
+                        <td>${student.major || '-'}</td>
+                        <td><span class="status-badge ${statusClass}">${student.status || '-'}</span></td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+        
+        // Override updateDashboard to include recent students
+        const originalUpdateDashboard = updateDashboard;
+        updateDashboard = async function() {
+            await originalUpdateDashboard();
+            displayRecentStudents();
+        };
+    </script>
+
 <script>
         // ตัวแปรเก็บสถานะการป้องกัน
         let protectionEnabled = true;
@@ -25,3 +694,5 @@
             alert('ปิดการป้องกันการคลิกขวาแล้ว');
         });
     </script>    
+</body>
+</html>
