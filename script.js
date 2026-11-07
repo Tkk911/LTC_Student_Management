@@ -680,7 +680,7 @@ function printWithSignatures() {
         <!DOCTYPE html>
         <html>
         <head>
-            <title>รายชื่อนักศึกษา - LTC</title>
+            <title>รายชื่อนักศึกษา - HTL</title>
             <meta charset="UTF-8">
             <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
