@@ -623,7 +623,7 @@ function exportToExcel() {
 
 function printWithSignatures() {
     const filters = getFilters();
-    const termVal = document.getElementById('printTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2567';
+    const termVal = document.getElementById('printTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2569';
     let printData = studentsData.filter(student => {
         if (filters.level && student.level !== filters.level) return false;
         if (filters.major && student.major !== filters.major) return false;
@@ -750,8 +750,8 @@ function printWithSignatures() {
         </head>
         <body>
             <div class="header-container">
-                <p class="college-en">LAEMTHONG TECHNOLOGY COLLEGE</p>
-                <h2 class="college-th">วิทยาลัยเทคโนโลยีแหลมทอง</h2>
+                <p class="college-en">HIGHTECH LAEMTHONG TECHNOLOGY COLLEGE</p>
+                <h2 class="college-th">วิทยาลัยเทคโนโลยี ไฮเทค แหลมทอง</h2>
                 <h3 class="title-report">รายชื่อนักศึกษา</h3>
                 <p class="subtitle-report">${termVal}</p>
             </div>
@@ -892,7 +892,7 @@ async function generateAttendanceTable() {
     const room = document.getElementById('attendanceRoom')?.value;
     const major = document.getElementById('attendanceMajor')?.value;
     const serial = document.getElementById('attendanceSerial')?.value;
-    const termVal = document.getElementById('attendanceTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2567';
+    const termVal = document.getElementById('attendanceTerm')?.value || 'ประจำภาคเรียนที่ 1 ปีการศึกษา 2569';
     const teacherVal = document.getElementById('attendanceTeacher')?.value || '';
     const subjectVal = document.getElementById('attendanceSubject')?.value || '';
     
@@ -995,11 +995,11 @@ async function generateAttendanceTable() {
             <tr style="height: auto;">
                 <td style="border: none; text-align: center; font-size: 12px; width: 33.3%;">
                     (......................................................)<br>
-                    <span style="display: inline-block; margin-top: 5px;">ครูที่ปรึกษา</span>
+                    <span style="display: inline-block; margin-top: 5px;">ครูที่ปรึกษา/ครูประจำรายวิชา</span>
                 </td>
                 <td style="border: none; text-align: center; font-size: 12px; width: 33.3%;">
                     (......................................................)<br>
-                    <span style="display: inline-block; margin-top: 5px;">หัวหน้าแผนก</span>
+                    <span style="display: inline-block; margin-top: 5px;">หัวหน้าแผนกวิชา</span>
                 </td>
                 <td style="border: none; text-align: center; font-size: 12px; width: 33.3%;">
                     (......................................................)<br>
