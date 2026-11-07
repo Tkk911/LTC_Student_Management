@@ -925,7 +925,7 @@ async function generateAttendanceTable() {
     html += `
         <div class="header-container" style="text-align: center; margin-bottom: 5px;">
             <p class="college-en" style="font-size: 12px; font-weight: 700; color: #c5a059; margin: 0 0 2px 0; letter-spacing: 0.5px; font-family: 'Arial', sans-serif;">LAEMTHONG TECHNOLOGY COLLEGE</p>
-            <h2 class="college-th" style="font-size: 18px; font-weight: 700; color: #002060; margin: 0 0 4px 0;">วิทยาลัยเทคโนโลยีแหลมทอง</h2>
+            <h2 class="college-th" style="font-size: 18px; font-weight: 700; color: #002060; margin: 0 0 4px 0;">วิทยาลัยเทคโนโลยี ไฮเทค แหลมทอง</h2>
             <h3 class="title-report" style="font-size: 16px; font-weight: 700; color: #000; margin: 0 0 3px 0;">ใบเช็คชื่อนักศึกษา</h3>
             <p class="subtitle-report" style="font-size: 12px; color: #000; margin: 0 0 5px 0;">${termVal}</p>
             ${subjectVal ? `<p class="subtitle-report" style="font-size: 12px; color: #000; margin: 0 0 5px 0;">รายวิชา: ${subjectVal}</p>` : ''}
