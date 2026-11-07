@@ -1,2 +1,2 @@
-# LTC_Student_Management
+# HTL_Student_Management
 ระบบจัดการฐานข้อมูลผู้เรียนวิทยาลัยเทคโนโลยีแหลมทอง
